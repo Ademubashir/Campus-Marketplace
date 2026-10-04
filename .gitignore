@@ -1,0 +1,26 @@
+# Ignore all uploads
+backend/uploads/*
+
+# Ignore .env and config files
+.env
+.config.js
+
+# Ignore node_modules
+node_modules/
+
+# Ignore Python stuff
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+ENV/
+
+# Ignore database temp files
+*.db*
+*.sqlite*
+*.sqlite3
+
+# VS Code
+.vscode/
