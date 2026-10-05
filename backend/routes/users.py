@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from ..models import db, User
+from models import db, User
 
 bp = Blueprint("users", __name__, url_prefix="/users")
 

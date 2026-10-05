@@ -22,7 +22,7 @@ class Config:
     # Default to a local PostgreSQL connection; override with DATABASE_URL.
     SQLALCHEMY_DATABASE_URI = _get(
         "DATABASE_URL",
-        "postgresql://postgres:postgres@localhost:5432/campus_marketplace",
+        "postgresql+psycopg2://postgres:postgres@localhost:5432/campus_marketplace",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

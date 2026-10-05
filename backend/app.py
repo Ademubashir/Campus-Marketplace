@@ -43,7 +43,7 @@ def create_app(config_class=Config):
     def _invalid_token(reason):
         return jsonify({"error": "Invalid token"}), 401
 
-    @jwt.unauthorized_token_loader
+    @jwt.unauthorized_loader
     def _unauthorized_token(reason):
         return jsonify({"error": "Missing token"}), 401
 

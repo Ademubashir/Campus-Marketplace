@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify
 
-from ..models import Category
+from models import Category
 
 bp = Blueprint("categories", __name__, url_prefix="/categories")
 
