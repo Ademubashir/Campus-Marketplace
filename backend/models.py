@@ -55,6 +55,11 @@ class Category(db.Model):
 
 class Listing(db.Model):
     __tablename__ = "listings"
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('available', 'sold')", name="ck_listings_status"
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     seller_id = db.Column(
