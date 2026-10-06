@@ -50,6 +50,14 @@ def create_app(config_class=Config):
     # Register blueprints / routes
     register_routes(app)
 
+    @app.errorhandler(404)
+    def not_found(e):
+        return jsonify({"error": "Not found"}), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(e):
+        return jsonify({"error": "Method not allowed"}), 405
+
     @app.route("/health")
     def health():
         return jsonify({"status": "ok", "service": "campus-marketplace"}), 200

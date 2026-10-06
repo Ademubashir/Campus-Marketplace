@@ -18,17 +18,20 @@ def list_listings():
     q = request.args.get("q", "")
     category_id = request.args.get("category_id", type=int)
     sort = request.args.get("sort", "newest")
-    page = request.args.get("page", 1, type=int)
-    limit = request.args.get("limit", 20, type=int)
+    page = request.args.get("page", 1, type=int) or 1
+    limit = request.args.get("limit", 20, type=int) or 20
+    page = max(page, 1)
+    limit = min(max(limit, 1), 50)
 
     query = Listing.query.filter(Listing.status == "available")
 
     if q:
-        q_pattern = f"%{q}%"
+        # Escape backslash first, then % and _, so they match literally.
+        q_pattern = f"%{q.replace(chr(92), chr(92) + chr(92)).replace('%', chr(92) + '%').replace('_', chr(92) + '_')}%"
         query = query.filter(
             db.or_(
-                Listing.title.ilike(q_pattern),
-                Listing.description.ilike(q_pattern),
+                Listing.title.ilike(q_pattern, escape=chr(92)),
+                Listing.description.ilike(q_pattern, escape=chr(92)),
             )
         )
 
