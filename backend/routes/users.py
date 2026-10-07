@@ -25,3 +25,34 @@ def get_me():
             "created_at": user.created_at,
         }
     ), 200
+
+@bp.route("/me/listings", methods=["GET"])
+@jwt_required()
+def my_listings():
+    """All of the logged-in user's listings, including sold ones."""
+    from models import Listing  # imported here so we don't touch the top of the file
+
+    user_id = int(get_jwt_identity())
+    listings = (
+        Listing.query.filter_by(seller_id=user_id)
+        .order_by(Listing.created_at.desc())
+        .all()
+    )
+
+    items = []
+    for listing in listings:
+        first_photo = listing.photos[0] if listing.photos else None
+        items.append(
+            {
+                "id": listing.id,
+                "title": listing.title,
+                "price": float(listing.price),
+                "category": listing.category.name if listing.category else None,
+                "condition": listing.condition,
+                "status": listing.status,
+                "first_photo_url": first_photo.url if first_photo else None,
+                "created_at": listing.created_at,
+            }
+        )
+
+    return jsonify({"items": items}), 200

@@ -33,6 +33,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - steps 1 to 8 done, step 9 (auth UI) next.
 - Step 1-9 done. Step 10 next.
 - Step 1-10 done. Step 11 next.
+- Step 1-11 done. Step 12 next.
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
