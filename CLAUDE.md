@@ -16,6 +16,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Database driver is `psycopg` (v3); the URL prefix is `postgresql+psycopg://`
 - Backend code uses top-level imports (`from models import ...`), never relative `..` imports
 - JWT tokens expire quickly; log in again for a fresh token when testing
+- Frontend: run with npm run dev in frontend/ (Vite proxies /api to port 5000)
 
 ## MVP features
 - Sign up / login (students only)
@@ -29,6 +30,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Done: Step 1 setup, Step 2 backend skeleton (`/health`), Step 3 database tables (migrations applied, categories seeded), Step 4 auth (signup/login, tested), Step 5 listings create/edit/delete/mark-as-sold (tested, owner-only), Step 6 photo upload (validated by real file content, max 5 photos of 5 MB, stored in `backend/uploads/`)
 - Next: Step 7 browse (search, filter, sort, pagination: route exists, needs testing), then the React frontend (Steps 8 to 13)
 - Step 7 is done, Next is step 8 which is for frontend(React+vite)(steps 8 to 13)
+- steps 1 to 8 done, step 9 (auth UI) next.
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.

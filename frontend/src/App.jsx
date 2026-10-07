@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
 import ListingDetail from './pages/ListingDetail'
@@ -18,11 +19,41 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/listings/:id" element={<ListingDetail />} />
-          <Route path="/sell" element={<CreateListing />} />
-          <Route path="/listings/:id/edit" element={<EditListing />} />
-          <Route path="/my-listings" element={<MyListings />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
+
+          <Route
+            path="/sell"
+            element={
+              <ProtectedRoute>
+                <CreateListing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/listings/:id/edit"
+            element={
+              <ProtectedRoute>
+                <EditListing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-listings"
+            element={
+              <ProtectedRoute>
+                <MyListings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<h1>Page not found</h1>} />
         </Routes>
       </main>
