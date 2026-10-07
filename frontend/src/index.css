@@ -206,3 +206,183 @@ nav {
 .pagination span {
   font-size: 0.95rem;
 }
+
+/* Detail page: stacked on mobile, side-by-side on wide screens */
+.detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@media (min-width: 700px) {
+  .detail-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .detail-photos {
+    flex: 1;
+    min-width: 0;
+  }
+  .detail-info {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.detail-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.main-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.sold-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: #e5484d;
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.thumbnails {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.thumbnail {
+  flex: 0 0 auto;
+  width: 70px;
+  height: 45px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  background: none;
+}
+
+.thumbnail.active {
+  border-color: #2563eb;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.detail-info .price {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0 0 1rem;
+  color: inherit;
+}
+
+.meta {
+  display: flex;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  opacity: 0.8;
+}
+
+.description,
+.seller-info {
+  margin-bottom: 1.5rem;
+}
+
+.description h3,
+.seller-info h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-outline {
+  .btn-outline {
+  border: 1px solid #8884;
+  color: inherit;
+}
+}
+
+.whatsapp-btn {
+  background: #25d366;
+  color: #fff;
+  padding: 0.6rem 1.25rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.whatsapp-btn:hover {
+  background: #1ebd5a;
+}
+
+.sold-notice {
+  color: #e5484d;
+  font-weight: bold;
+  margin: 0;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

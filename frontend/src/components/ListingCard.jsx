@@ -1,5 +1,6 @@
 // A single listing card: photo, title, price, category, link to /listing/:id
 import { Link } from 'react-router-dom'
+import { formatPrice } from '../utils'
 
 export default function ListingCard({ listing }) {
   const { id, title, price, category, first_photo_url } = listing
@@ -24,13 +25,7 @@ export default function ListingCard({ listing }) {
           <h3 className="card-title">{title}</h3>
           <p className="card-price">
             {/* Naira price formatted automatically */}
-            <span>
-              {new Intl.NumberFormat('en-NG', {
-                style: 'currency',
-                currency: 'NGN',
-                maximumFractionDigits: 0,
-              }).format(price)}
-            </span>
+            <span>{formatPrice(price)}</span>
           </p>
           <p className="card-category">{category || 'Uncategorized'}</p>
         </div>
