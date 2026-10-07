@@ -28,6 +28,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 ## Progress
 - Done: Step 1 setup, Step 2 backend skeleton (`/health`), Step 3 database tables (migrations applied, categories seeded), Step 4 auth (signup/login, tested), Step 5 listings create/edit/delete/mark-as-sold (tested, owner-only), Step 6 photo upload (validated by real file content, max 5 photos of 5 MB, stored in `backend/uploads/`)
 - Next: Step 7 browse (search, filter, sort, pagination: route exists, needs testing), then the React frontend (Steps 8 to 13)
+- Step 7 is done, Next is step 8 which is for frontend(React+vite)(steps 8 to 13)
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
