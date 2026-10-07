@@ -31,6 +31,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Next: Step 7 browse (search, filter, sort, pagination: route exists, needs testing), then the React frontend (Steps 8 to 13)
 - Step 7 is done, Next is step 8 which is for frontend(React+vite)(steps 8 to 13)
 - steps 1 to 8 done, step 9 (auth UI) next.
+- Step 1-9 done. Step 10 next.
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
