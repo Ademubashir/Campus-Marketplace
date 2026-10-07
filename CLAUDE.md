@@ -34,6 +34,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Step 1-9 done. Step 10 next.
 - Step 1-10 done. Step 11 next.
 - Step 1-11 done. Step 12 next.
+- Step 1 to 12 done. Step 13 to go.
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
