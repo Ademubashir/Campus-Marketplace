@@ -10,49 +10,28 @@ import MyListings from './pages/MyListings'
 import Login from './pages/Login'
 import Profile from './pages/Profile'
 
+// Shorthand: wraps a page so only logged-in users can see it.
+function Private({ children }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>
+}
+
 export default function App() {
   return (
     <>
       <Navbar />
       <main className="container">
         <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/listings/:id" element={<ListingDetail />} />
           <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/sell"
-            element={
-              <ProtectedRoute>
-                <CreateListing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/listings/:id/edit"
-            element={
-              <ProtectedRoute>
-                <EditListing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-listings"
-            element={
-              <ProtectedRoute>
-                <MyListings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+          {/* Need a login */}
+          <Route path="/browse" element={<Private><Browse /></Private>} />
+          <Route path="/listings/:id" element={<Private><ListingDetail /></Private>} />
+          <Route path="/sell" element={<Private><CreateListing /></Private>} />
+          <Route path="/listings/:id/edit" element={<Private><EditListing /></Private>} />
+          <Route path="/my-listings" element={<Private><MyListings /></Private>} />
+          <Route path="/profile" element={<Private><Profile /></Private>} />
 
           <Route path="*" element={<h1>Page not found</h1>} />
         </Routes>

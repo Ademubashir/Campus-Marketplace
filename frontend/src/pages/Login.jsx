@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 
@@ -10,7 +10,13 @@ export default function Login() {
   // If a protected page sent us here, go back to it after logging in.
   const goTo = location.state?.from || '/browse'
 
-  const [mode, setMode] = useState('login') // 'login' or 'signup'
+      const [mode, setMode] = useState('login') // 'login' or 'signup'
+
+  // Switch tabs whenever the address says ?mode=signup (or doesn't)
+  useEffect(() => {
+    const wantsSignup = new URLSearchParams(location.search).get('mode') === 'signup'
+    setMode(wantsSignup ? 'signup' : 'login')
+  }, [location.search])
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -46,6 +52,9 @@ export default function Login() {
   return (
     <div className="auth">
       <h1>{mode === 'login' ? 'Login' : 'Create an account'}</h1>
+            {location.state?.from && (
+        <p className="notice">Please log in or sign up to continue.</p>
+      )}
 
       <div className="auth-tabs">
         <button

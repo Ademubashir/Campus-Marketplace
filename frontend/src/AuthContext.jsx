@@ -19,13 +19,14 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
-  async function login(email, password) {
+    async function login(email, password) {
     const data = await api('/auth/login', {
       method: 'POST',
       body: { email, password },
     })
     setToken(data.token)
-    setUser(data.user)
+    // The login reply may carry only some user fields, so load the full profile.
+    setUser(await api('/users/me'))
   }
 
   async function signup(fields) {
@@ -34,9 +35,9 @@ export function AuthProvider({ children }) {
       body: fields,
     })
     setToken(data.token)
-    setUser(data.user)
+    setUser(await api('/users/me'))
   }
-
+  
   function logout() {
     clearToken()
     setUser(null)
