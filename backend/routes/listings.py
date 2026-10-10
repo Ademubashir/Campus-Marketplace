@@ -13,6 +13,7 @@ bp = Blueprint("listings", __name__, url_prefix="/listings")
 
 
 @bp.route("", methods=["GET"])
+@jwt_required()
 def list_listings():
     """Browse listings with optional search, category filter, and sort."""
     q = request.args.get("q", "")
@@ -23,7 +24,12 @@ def list_listings():
     page = max(page, 1)
     limit = min(max(limit, 1), 50)
 
-    query = Listing.query.filter(Listing.status == "available")
+    # Sold items stay in the list (the card shows a "Sold" badge). The Home page
+    # passes status=available to show only items that can still be bought.
+    query = Listing.query
+    status = request.args.get("status")
+    if status in ("available", "sold"):
+        query = query.filter(Listing.status == status)
 
     if q:
         # Escape backslash first, then % and _, so they match literally.
@@ -39,12 +45,14 @@ def list_listings():
         query = query.filter(Listing.category_id == category_id)
 
     # Sorting options
+    # Available items first, sold ones after them, then the chosen sort order.
+    sold_last = db.case((Listing.status == "sold", 1), else_=0)
     if sort == "price_asc":
-        query = query.order_by(Listing.price.asc(), Listing.created_at.desc())
+        query = query.order_by(sold_last, Listing.price.asc(), Listing.created_at.desc())
     elif sort == "price_desc":
-        query = query.order_by(Listing.price.desc(), Listing.created_at.desc())
+        query = query.order_by(sold_last, Listing.price.desc(), Listing.created_at.desc())
     else:
-        query = query.order_by(Listing.created_at.desc())
+        query = query.order_by(sold_last, Listing.created_at.desc())
 
     pagination = query.paginate(page=page, per_page=limit, error_out=False)
     items = []
@@ -58,6 +66,7 @@ def list_listings():
                 "price": float(listing.price),
                 "category": listing.category.name if listing.category else None,
                 "condition": listing.condition,
+                "status": listing.status,
                 "first_photo_url": first_photo.url if first_photo else None,
                 "created_at": listing.created_at,
             }
@@ -74,6 +83,7 @@ def list_listings():
 
 
 @bp.route("/<int:listing_id>", methods=["GET"])
+@jwt_required()
 def get_listing(listing_id):
     """Get a single listing's details."""
     listing = Listing.query.get_or_404(listing_id)

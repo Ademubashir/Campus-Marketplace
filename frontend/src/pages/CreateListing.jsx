@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import Dropdown from '../components/Dropdown'
 
 const MAX_PHOTOS = 5
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB, same limits as the backend
+
+const CONDITION_OPTIONS = [
+  { value: '', label: 'Not specified' },
+  { value: 'new', label: 'New' },
+  { value: 'used', label: 'Used' },
+]
 
 export default function CreateListing() {
   const navigate = useNavigate()
@@ -52,6 +59,11 @@ export default function CreateListing() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    // The custom dropdown has no built-in "required" check, so check here.
+    if (!form.category_id) {
+      setError('Choose a category')
+      return
+    }
     setBusy(true)
     try {
       // FormData is how a browser sends text fields and files together.
@@ -94,26 +106,26 @@ export default function CreateListing() {
           />
         </label>
 
-        <label>
-          Category
-          <select name="category_id" value={form.category_id} onChange={update} required>
-            <option value="">Choose a category</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="field">
+          <span className="field-label">Category</span>
+          <Dropdown
+            label="Category"
+            placeholder="Choose a category"
+            value={form.category_id}
+            onChange={(val) => setForm({ ...form, category_id: String(val) })}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+        </div>
 
-        <label>
-          Condition
-          <select name="condition" value={form.condition} onChange={update}>
-            <option value="">Not specified</option>
-            <option value="new">New</option>
-            <option value="used">Used</option>
-          </select>
-        </label>
+        <div className="field">
+          <span className="field-label">Condition</span>
+          <Dropdown
+            label="Condition"
+            value={form.condition}
+            onChange={(val) => setForm({ ...form, condition: val })}
+            options={CONDITION_OPTIONS}
+          />
+        </div>
 
         <label>
           Description

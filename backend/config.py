@@ -5,6 +5,7 @@ Usage:
     - The .env file is loaded automatically when Flask starts (see app.py).
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -32,7 +33,7 @@ class Config:
 
     # --- JWT ---
     JWT_SECRET_KEY = _get("JWT_SECRET_KEY", "dev-jwt-secret-key")
-    JWT_ACCESS_TOKEN_EXPIRES = 900  # 15 minutes (short expiry, per plan)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=3)  # stay logged in for three days
 
     # --- Uploads ---
     UPLOAD_FOLDER = BASE_DIR / "uploads"

@@ -17,6 +17,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Backend code uses top-level imports (`from models import ...`), never relative `..` imports
 - JWT tokens expire quickly; log in again for a fresh token when testing
 - Frontend: run with npm run dev in frontend/ (Vite proxies /api to port 5000)
+- Styling uses the CSS variables at the top of src/index.css; icons come from Font Awesome (already installed).
 
 ## MVP features
 - Sign up / login (students only)
@@ -35,6 +36,7 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Step 1-10 done. Step 11 next.
 - Step 1-11 done. Step 12 next.
 - Step 1 to 12 done. Step 13 to go.
+- the phone test passed, and the design work is in progress (the design foundation, navbar, and Font Awesome icons are done, the Home page is   next).
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.

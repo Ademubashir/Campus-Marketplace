@@ -43,6 +43,9 @@ export async function api(path, { method = 'GET', body } = {}) {
 
   if (res.status === 401) {
     clearToken() // the token is missing, wrong, or expired
+    // A saved login stopped working (usually: expired). Tell the app so it can
+    // log the user out cleanly and send them to the login page.
+    if (token) window.dispatchEvent(new Event('auth:expired'))
   }
 
   if (!res.ok) {

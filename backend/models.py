@@ -20,6 +20,10 @@ class User(db.Model):
     full_name = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20), nullable=False)  # international format, e.g. +1-555-123-4567
     university = db.Column(db.String(100), nullable=False)  # required per plan
+    # Raised by one to log this user out of every device (lost phone, password change).
+    token_version = db.Column(
+        db.Integer, nullable=False, default=0, server_default="0"
+    )
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
         db.DateTime, server_default=db.func.now(), onupdate=db.func.now()

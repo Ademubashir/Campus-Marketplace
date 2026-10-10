@@ -19,6 +19,14 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
+  // If any request finds the saved login expired, log the user out cleanly.
+  // The protected pages then send them to the login page and bring them back after.
+  useEffect(() => {
+    const onExpired = () => setUser(null)
+    window.addEventListener('auth:expired', onExpired)
+    return () => window.removeEventListener('auth:expired', onExpired)
+  }, [])
+
     async function login(email, password) {
     const data = await api('/auth/login', {
       method: 'POST',

@@ -38,7 +38,9 @@ export default function Navbar() {
           </Link>
           {loading ? null : user ? (
             <>
-              <span className="nav-hello">Hi, {user.full_name?.split(' ')[0] || 'there'}</span>
+              <Link to="/profile" className="nav-hello">
+                Hi, {user.full_name?.split(' ')[0] || 'there'}
+              </Link>
               <button type="button" onClick={handleLogout}>
                 Logout
               </button>
@@ -71,10 +73,16 @@ export default function Navbar() {
           Sell
         </NavLink>
         {user ? (
-          <NavLink to="/my-listings">
-            <FontAwesomeIcon icon={faClipboardList} />
-            Mine
-          </NavLink>
+          <>
+            <NavLink to="/my-listings">
+              <FontAwesomeIcon icon={faClipboardList} />
+              Mine
+            </NavLink>
+            <NavLink to="/profile">
+              <FontAwesomeIcon icon={faUser} />
+              Profile
+            </NavLink>
+          </>
         ) : (
           <NavLink to="/login">
             <FontAwesomeIcon icon={faUser} />

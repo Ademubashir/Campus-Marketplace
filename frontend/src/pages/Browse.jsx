@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import ListingCard from '../components/ListingCard'
+import Dropdown from '../components/Dropdown'
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'price_asc', label: 'Price: low → high' },
+  { value: 'price_desc', label: 'Price: high → low' },
+]
 
 export default function Browse() {
   // States
@@ -10,9 +18,14 @@ export default function Browse() {
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
   const [total, setTotal] = useState(0)
-  const [search, setSearch] = useState('') // raw search input
-  const [debouncedSearch, setDebouncedSearch] = useState('') // for actual search
-  const [categoryId, setCategoryId] = useState(null) // null means ALL
+    // Start from the URL (?q=...&category_id=...) so there's no unfiltered flash
+  const [searchParams] = useSearchParams()
+  const initialQ = searchParams.get('q') || ''
+  const initialCat = searchParams.get('category_id')
+
+  const [search, setSearch] = useState(initialQ) // raw search input
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQ) // for actual search
+  const [categoryId, setCategoryId] = useState(initialCat ? Number(initialCat) : null) // null means ALL
   const [sort, setSort] = useState('newest')
   const [categories, setCategories] = useState([])
 
@@ -90,35 +103,26 @@ export default function Browse() {
         </div>
 
         <div className="filter-group">
-          <label htmlFor="category">Category:</label>
-          <select
-            id="category"
+          <span>Category:</span>
+          <Dropdown
+            label="Category"
             value={categoryId ?? ''}
-            onChange={(e) => {
-              const val = e.target.value
-              setCategoryId(val === '' ? null : Number(val))
-            }}
-          >
-            <option value="">ALL categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setCategoryId(val === '' ? null : Number(val))}
+            options={[
+              { value: '', label: 'ALL categories' },
+              ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+            ]}
+          />
         </div>
 
         <div className="filter-group">
-          <label htmlFor="sort">Sort by:</label>
-          <select
-            id="sort"
+          <span>Sort by:</span>
+          <Dropdown
+            label="Sort by"
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          >
-            <option value="newest">Newest first</option>
-            <option value="price_asc">Price: low → high</option>
-            <option value="price_desc">Price: high → low</option>
-          </select>
+            onChange={setSort}
+            options={SORT_OPTIONS}
+          />
         </div>
       </div>
 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
 export default function Login() {
   const { login, signup } = useAuth()
@@ -26,6 +28,7 @@ export default function Login() {
   })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showPassword, setShowPassword] = useState(false) // eye button toggles this
 
   function update(e) {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -81,8 +84,17 @@ export default function Login() {
               <input name="full_name" value={form.full_name} onChange={update} required />
             </label>
             <label>
-              Phone (with country code, e.g. +2348012345678)
-              <input name="phone" value={form.phone} onChange={update} required />
+              WhatsApp number (e.g. 0801 234 5678)
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                name="phone"
+                placeholder="08012345678"
+                value={form.phone}
+                onChange={update}
+                required
+              />
             </label>
             <label>
               University
@@ -97,7 +109,25 @@ export default function Login() {
         </label>
         <label>
           Password
-          <input type="password" name="password" value={form.password} onChange={update} required />
+          <span className="pw-field">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={form.password}
+              onChange={update}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              required
+            />
+            <button
+              type="button"
+              className="pw-toggle"
+              onClick={() => setShowPassword((show) => !show)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+            >
+              <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+            </button>
+          </span>
         </label>
 
         {error && <p className="error">{error}</p>}

@@ -1,10 +1,9 @@
 """Auth routes: signup, login."""
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token
 
 from models import User, db
-from utils import hash_password, verify_password
+from utils import hash_password, verify_password, normalize_phone, issue_token
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -21,8 +20,18 @@ def signup():
     if not email or not password or not full_name or not phone or not university:
         return jsonify({"error": "All fields required"}), 400
 
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered"}), 409
+
+    # Accept the number the way people type it (0801 234 5678) and store it
+    # in international form (+2348012345678), which is what WhatsApp links need.
+    try:
+        phone = normalize_phone(phone)
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
 
     user = User(
         email=email,
@@ -34,7 +43,7 @@ def signup():
     db.session.add(user)
     db.session.commit()
 
-    access_token = create_access_token(identity=str(user.id))
+    access_token = issue_token(user)
     return jsonify({"user": {"id": user.id, "email": user.email}, "token": access_token}), 201
 
 
@@ -48,5 +57,5 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=str(user.id))
+    access_token = issue_token(user)
     return jsonify({"user": {"id": user.id, "email": user.email}, "token": access_token}), 200

@@ -56,3 +56,43 @@ def my_listings():
         )
 
     return jsonify({"items": items}), 200
+
+
+@bp.route("/me/logout-others", methods=["POST"])
+@jwt_required()
+def logout_other_devices():
+    """Cut off every other device. The one asking gets a fresh token and stays in."""
+    from utils import issue_token
+
+    user = db.session.get(User, int(get_jwt_identity()))
+    user.token_version += 1  # every older token now fails the version check
+    db.session.commit()
+    return jsonify(
+        {"message": "Logged out of all other devices", "token": issue_token(user)}
+    ), 200
+
+
+@bp.route("/me/password", methods=["POST"])
+@jwt_required()
+def change_password():
+    """Change the password. This also logs out every other device."""
+    from utils import issue_token
+
+    data = request.get_json(silent=True) or {}
+    current = data.get("current_password") or ""
+    new = data.get("new_password") or ""
+
+    user = db.session.get(User, int(get_jwt_identity()))
+
+    # 400, not 401: a 401 would make the app think the login expired.
+    if not user.check_password(current):
+        return jsonify({"error": "Current password is wrong"}), 400
+    if len(new) < 8:
+        return jsonify({"error": "New password must be at least 8 characters"}), 400
+    if new == current:
+        return jsonify({"error": "Choose a password different from the current one"}), 400
+
+    user.set_password(new)
+    user.token_version += 1
+    db.session.commit()
+    return jsonify({"message": "Password changed", "token": issue_token(user)}), 200

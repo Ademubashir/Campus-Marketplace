@@ -9,8 +9,8 @@ export default function ProtectedRoute({ children }) {
   if (loading) return <p>Loading...</p>
 
   if (!user) {
-    // Send them to login, and remember where they were going.
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />
+    // Send them to login, and remember where they were going (including query params).
+    return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />
   }
 
   return children

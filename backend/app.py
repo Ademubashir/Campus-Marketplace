@@ -47,6 +47,17 @@ def create_app(config_class=Config):
     def _unauthorized_token(reason):
         return jsonify({"error": "Missing token"}), 401
 
+    # A token is revoked when its version no longer matches the user's current
+    # token_version (they logged out of all devices or changed their password).
+    @jwt.token_in_blocklist_loader
+    def _token_is_revoked(jwt_header, jwt_data):
+        user = db.session.get(User, int(jwt_data["sub"]))
+        return user is None or jwt_data.get("tv", 0) != user.token_version
+
+    @jwt.revoked_token_loader
+    def _revoked_token(jwt_header, jwt_data):
+        return jsonify({"error": "Session ended. Please log in again."}), 401
+
     # Register blueprints / routes
     register_routes(app)
 
