@@ -1,42 +1,49 @@
 # Campus Marketplace
 
-Web app where students buy and sell items (textbooks, gadgets, clothes) within a university.
+Web app where students buy and sell items (textbooks, gadgets, clothes) within a university. Buyers contact sellers on WhatsApp.
 
 ## Stack
-- Frontend: React + Vite
+- Frontend: React + Vite (JavaScript, plain CSS, no TypeScript)
 - Backend: Flask + SQLAlchemy + Flask-Migrate
 - Database: PostgreSQL (native install, no Docker), database name `campus_marketplace`. Never touch `classcheck_saas`.
 
 ## Environment
 - Windows laptop. The Bash tool runs Git Bash, so use bash syntax in commands.
 - For Windows-only things (services, PowerShell cmdlets), call them through `powershell -Command "..."`.
-- Phone testing over an ngrok HTTPS tunnel
 - Run the backend from the `backend` folder: `python app.py`
 - Run Flask commands as `python -m flask --app app ...` (the `flask` command is not on PATH)
+- Run the frontend from the `frontend` folder: `npm run dev` (Vite proxies `/api` to port 5000). Only one copy should run (port 5173).
+- Phone testing goes through one ngrok tunnel to the Vite port: `ngrok http 5173`
 - Database driver is `psycopg` (v3); the URL prefix is `postgresql+psycopg://`
 - Backend code uses top-level imports (`from models import ...`), never relative `..` imports
-- JWT tokens expire quickly; log in again for a fresh token when testing
-- Frontend: run with npm run dev in frontend/ (Vite proxies /api to port 5000)
-- Styling uses the CSS variables at the top of src/index.css; icons come from Font Awesome (already installed).
+- Any change to `backend/models.py` needs a Flask-Migrate migration (`db migrate`, check the file, `db upgrade`).
 
-## MVP features
-- Sign up / login (students only)
-- Create, edit, and delete a listing (title, price, category, description, photos)
-- Browse listings with search, category filter, and sorting
-- Listing detail page with a "contact seller" button (WhatsApp link)
-- "My listings" page for sellers to manage their items
-- Mark a listing as sold
+## How it works
+- **Auth:** JWT in localStorage, valid 3 days. Each user has a `token_version`; tokens carry it (`tv` claim), and raising it logs the user out of every device. Passwords need at least 8 characters.
+- **Phone numbers:** people type local numbers (0801 234 5678). Signup converts them to `+234...` (`normalize_phone` in `utils.py`), which the WhatsApp link needs.
+- **Login gate:** Browse, listing detail, Sell, Edit, My listings and Profile need a login (`ProtectedRoute` on the screen, `@jwt_required()` on the API). Home and Login are public. Listing photos are public files with random names.
+- **Expired login:** `api.js` fires an `auth:expired` event on a 401 and `AuthContext` logs the user out.
+- **Sold items:** they stay in Browse, listed after available ones, with a round red "Sold" badge. The Home "Newest" row asks for `status=available`.
+
+## API (all under /api/v1)
+- Auth: `POST /auth/signup`, `POST /auth/login`
+- Public: `GET /categories`, `GET /listings/photos/<file>`
+- Listings (login needed): `GET /listings` (q, category_id, sort, page, limit, status), `GET /listings/:id`, `POST /listings`, `PATCH /listings/:id`, `DELETE /listings/:id`, `PATCH /listings/:id/sold`, `POST /listings/:id/photos`, `DELETE /listings/:id/photos/:photo_id`
+- Users: `GET /users/me`, `GET /users/me/listings`, `POST /users/me/password`, `POST /users/me/logout-others`
+- Errors always look like `{"error": "..."}`. A wrong current password returns 400, not 401 (a 401 would log the user out).
+
+## Frontend
+- Pages: Home, Login (login and signup tabs), Browse, ListingDetail, CreateListing, EditListing, MyListings, Profile.
+- Shared: Navbar (top bar plus a phone bottom bar), ProtectedRoute, ListingCard, Dropdown.
+- Styling: CSS variables at the top of `src/index.css` (indigo `--primary`, amber `--accent`, WhatsApp green). Never hard-code colors. Icons come from Font Awesome (solid set installed; the brands set is not).
+- Use the custom `Dropdown` component, not a native `<select>`.
+- Buttons have a shared hover and press effect in `index.css`.
 
 ## Progress
-- Done: Step 1 setup, Step 2 backend skeleton (`/health`), Step 3 database tables (migrations applied, categories seeded), Step 4 auth (signup/login, tested), Step 5 listings create/edit/delete/mark-as-sold (tested, owner-only), Step 6 photo upload (validated by real file content, max 5 photos of 5 MB, stored in `backend/uploads/`)
-- Next: Step 7 browse (search, filter, sort, pagination: route exists, needs testing), then the React frontend (Steps 8 to 13)
-- Step 7 is done, Next is step 8 which is for frontend(React+vite)(steps 8 to 13)
-- steps 1 to 8 done, step 9 (auth UI) next.
-- Step 1-9 done. Step 10 next.
-- Step 1-10 done. Step 11 next.
-- Step 1-11 done. Step 12 next.
-- Step 1 to 12 done. Step 13 to go.
-- the phone test passed, and the design work is in progress (the design foundation, navbar, and Font Awesome icons are done, the Home page is   next).
+- Done: backend (setup, tables, auth, listings, photos, browse, sold items, profile, change password, log out other devices) and the whole React frontend (all pages above), tested on desktop and on a phone through ngrok.
+- Design is mostly done: palette, fonts, Home page, navbar, custom dropdown, button effects, show/hide password.
+- Next: clean test data (listings with private screenshots, throwaway accounts), save confirmations ("Saved", "Listing posted"), listing page upgrades (sticky WhatsApp button on phones, seller card), photo previews and removing a single photo.
+- Then: a deployment checklist (turn off `debug=True`, strong secret keys with no fallbacks, lock CORS, production server, hosting, fresh production database, backups).
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
@@ -44,5 +51,6 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 - Work one build step at a time, then stop and show me it working.
 - Keep changes small and focused; don't refactor unrelated code.
 - Show me any database schema change before applying it.
-- Explain the cause of any bug you fix.
-- Everything stays local for now; don't set up deployment.
+- Don't start dev servers or run long commands; I test myself.
+- Explain the cause of any bug you fix. I'm learning React, so keep explanations short and clear.
+- Everything stays local for now; don't set up deployment until I ask.
