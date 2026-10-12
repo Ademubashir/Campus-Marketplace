@@ -102,6 +102,7 @@ def get_listing(listing_id):
                 "id": listing.seller.id,
                 "full_name": listing.seller.full_name,
                 "phone": listing.seller.phone,
+                "university": listing.seller.university,
             },
             "created_at": listing.created_at,
         }

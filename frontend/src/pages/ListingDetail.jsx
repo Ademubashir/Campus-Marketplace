@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { formatPrice } from '../utils'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 
 export default function ListingDetail() {
   const { id } = useParams()
@@ -65,12 +67,16 @@ export default function ListingDetail() {
       )}`
     : null
 
+  // Show the contact button only to a logged-in buyer of an available item.
+  const showContact = !isSold && !isOwner && !authLoading && Boolean(whatsappLink)
+
   // Loading/error states
   if (loading) return <p>Loading listing...</p>
   if (error) return <p className="error">Error: {error}</p>
   if (!listing) return <p>Listing not found</p>
 
   return (
+    <>
     <div className="detail-layout">
       {/* Left: photos */}
       <div className="detail-photos">
@@ -113,18 +119,28 @@ export default function ListingDetail() {
         <p className="price">{formatPrice(listing.price)}</p>
         <p className="meta">
           <span>Category: {listing.category}</span>
-          <span>Condition: {listing.condition}</span>
+          {listing.condition && <span>Condition: {listing.condition}</span>}
         </p>
 
         <div className="description">
           <h3>Description</h3>
-          <p>{listing.description}</p>
+          <p>{listing.description || 'No description provided.'}</p>
         </div>
 
         <div className="seller-info">
           <h3>Seller</h3>
-          <p>{listing.seller?.full_name}</p>
-          <p>Posted on {postedDate}</p>
+          <div className="seller-card">
+            <div className="seller-avatar" aria-hidden="true">
+              {(listing.seller?.full_name || '?').trim().charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="seller-name">{listing.seller?.full_name}</p>
+              {listing.seller?.university && (
+                <p className="seller-sub">{listing.seller.university}</p>
+              )}
+              <p className="seller-sub">Posted on {postedDate}</p>
+            </div>
+          </div>
         </div>
 
         <div className="actions">
@@ -151,10 +167,39 @@ export default function ListingDetail() {
           )}
         </div>
 
+        {showContact && (
+          <div className="safety-tip">
+            <FontAwesomeIcon icon={faShieldHalved} />
+            <p>
+              <strong>Stay safe.</strong> Meet in a public place on campus, and don't pay before
+              you've seen the item.
+            </p>
+          </div>
+        )}
+
         <Link to="/browse" className="back-link">
           ← Back to browse
         </Link>
       </div>
     </div>
+
+    {/* Phones: a contact bar that stays on screen while you scroll */}
+    {showContact && (
+      <div className="sticky-contact">
+        <div>
+          <span className="sticky-price">{formatPrice(listing.price)}</span>
+          <span className="sticky-title">{listing.title}</span>
+        </div>
+        <a
+          href={whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="whatsapp-btn"
+        >
+          Contact seller
+        </a>
+      </div>
+    )}
+    </>
   )
 }
