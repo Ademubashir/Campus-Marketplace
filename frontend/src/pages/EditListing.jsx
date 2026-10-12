@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import Dropdown from '../components/Dropdown'
+import { useToast } from '../ToastContext'
 
 const MAX_PHOTOS = 5
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB, same limits as the backend
@@ -17,6 +18,7 @@ export default function EditListing() {
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
 
   const [listing, setListing] = useState(null)
   const [categories, setCategories] = useState([])
@@ -114,6 +116,7 @@ export default function EditListing() {
         await api(`/listings/${id}/photos`, { method: 'POST', body: data })
       }
 
+      toast.success('Changes saved')
       navigate(`/listings/${id}`)
     } catch (err) {
       setError(err.message)

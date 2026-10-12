@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { formatPrice } from '../utils'
+import { useToast } from '../ToastContext'
 
 export default function MyListings() {
+  const toast = useToast()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,6 +38,7 @@ export default function MyListings() {
       setListings((prev) =>
         prev.map((l) => (l.id === listing.id ? { ...l, status: updated.status } : l))
       )
+      toast.success(updated.status === 'sold' ? 'Marked as sold' : 'Marked as available')
     } catch (err) {
       setError(err.message)
     }
@@ -47,6 +50,7 @@ export default function MyListings() {
     try {
       await api(`/listings/${listing.id}`, { method: 'DELETE' })
       setListings((prev) => prev.filter((l) => l.id !== listing.id))
+      toast.success('Listing deleted')
     } catch (err) {
       setError(err.message)
     }

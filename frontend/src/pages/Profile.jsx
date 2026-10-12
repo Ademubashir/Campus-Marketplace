@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 import { api, setToken } from '../api'
 import { useAuth } from '../AuthContext'
+import { useToast } from '../ToastContext'
 
 // A password box with an eye button to show or hide what you typed.
 function PasswordField({ label, name, value, onChange, autoComplete }) {
@@ -35,16 +36,15 @@ function PasswordField({ label, name, value, onChange, autoComplete }) {
 
 export default function Profile() {
   const { user } = useAuth()
+  const toast = useToast()
 
   // Change-password form
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
   const [pwError, setPwError] = useState('')
-  const [pwDone, setPwDone] = useState('')
   const [pwBusy, setPwBusy] = useState(false)
 
   // "Log out other devices" button
   const [secError, setSecError] = useState('')
-  const [secDone, setSecDone] = useState('')
   const [secBusy, setSecBusy] = useState(false)
 
   function updatePw(e) {
@@ -54,7 +54,6 @@ export default function Profile() {
   async function changePassword(e) {
     e.preventDefault()
     setPwError('')
-    setPwDone('')
 
     // Quick checks in the browser; the server checks again.
     if (pw.next.length < 8) {
@@ -74,7 +73,7 @@ export default function Profile() {
       })
       setToken(data.token) // this device gets a fresh login; all others are cut off
       setPw({ current: '', next: '', confirm: '' })
-      setPwDone('Password changed. Every other device has been logged out.')
+      toast.success('Password changed. Other devices were logged out.')
     } catch (err) {
       setPwError(err.message)
     } finally {
@@ -85,12 +84,11 @@ export default function Profile() {
   async function logoutOthers() {
     if (!window.confirm('Log out of every other device? This device stays logged in.')) return
     setSecError('')
-    setSecDone('')
     setSecBusy(true)
     try {
       const data = await api('/users/me/logout-others', { method: 'POST' })
       setToken(data.token)
-      setSecDone('Done. Every other device has been logged out.')
+      toast.success('Logged out of all other devices')
     } catch (err) {
       setSecError(err.message)
     } finally {
@@ -152,7 +150,6 @@ export default function Profile() {
           />
 
           {pwError && <p className="error">{pwError}</p>}
-          {pwDone && <p className="success">{pwDone}</p>}
 
           <button type="submit" disabled={pwBusy}>
             {pwBusy ? 'Saving...' : 'Change password'}
@@ -167,7 +164,6 @@ export default function Profile() {
           device. You stay logged in here. Changing your password does this too.
         </p>
         {secError && <p className="error">{secError}</p>}
-        {secDone && <p className="success">{secDone}</p>}
         <button type="button" onClick={logoutOthers} disabled={secBusy}>
           {secBusy ? 'Please wait...' : 'Log out other devices'}
         </button>

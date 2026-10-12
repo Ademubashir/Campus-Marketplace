@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import Dropdown from '../components/Dropdown'
+import { useToast } from '../ToastContext'
 
 const MAX_PHOTOS = 5
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB, same limits as the backend
@@ -14,6 +15,7 @@ const CONDITION_OPTIONS = [
 
 export default function CreateListing() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState({
     title: '',
@@ -76,6 +78,7 @@ export default function CreateListing() {
       files.forEach((f) => data.append('photos', f))
 
       const listing = await api('/listings', { method: 'POST', body: data })
+      toast.success('Listing posted')
       navigate(`/listings/${listing.id}`)
     } catch (err) {
       setError(err.message)

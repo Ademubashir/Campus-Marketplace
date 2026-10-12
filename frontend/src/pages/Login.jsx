@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
+import { useToast } from '../ToastContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 
@@ -8,6 +9,7 @@ export default function Login() {
   const { login, signup } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const toast = useToast()
 
   // If a protected page sent us here, go back to it after logging in.
   const goTo = location.state?.from || '/browse'
@@ -43,6 +45,8 @@ export default function Login() {
         await login(form.email, form.password)
       } else {
         await signup(form)
+        // A short welcome after creating an account (not after every login)
+        toast.success(`Welcome, ${form.full_name.trim().split(' ')[0]}!`)
       }
       navigate(goTo, { replace: true })
     } catch (err) {

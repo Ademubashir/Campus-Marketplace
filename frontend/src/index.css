@@ -1328,3 +1328,70 @@ nav a.nav-hello:hover {
 .listing-card.sold .card-price {
   color: var(--text-soft);
 }
+
+/* ===== Toast messages (Saved, Listing posted, ...) ===== */
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(92vw, 380px);
+  pointer-events: none; /* clicks pass through the empty area */
+}
+
+/* On phones, sit above the bottom tab bar */
+@media (max-width: 699px) {
+  .toasts {
+    bottom: 5rem;
+  }
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--whatsapp);
+  background: var(--text);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(20, 24, 50, 0.25);
+  cursor: pointer;
+  animation: toast-in 0.25s ease-out;
+}
+
+.toast svg {
+  font-size: 1.1rem;
+  color: var(--whatsapp);
+}
+
+.toast.error {
+  border-left-color: var(--danger);
+}
+
+.toast.error svg {
+  color: var(--danger);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
