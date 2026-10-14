@@ -99,7 +99,7 @@ export default function Profile() {
   if (!user) return null
 
   return (
-    <div>
+    <div className="profile">
       <h1>Profile</h1>
 
       <div className="auth">

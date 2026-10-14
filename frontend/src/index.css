@@ -1500,3 +1500,197 @@ nav a.nav-hello:hover {
     font-size: 0.8rem;
   }
 }
+
+/* ===== Final touches ===== */
+
+/* Full-width form buttons: lift and glow instead of growing past the card */
+.auth form button[type='submit'] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(59, 75, 219, 0.25);
+}
+
+.auth form button[type='submit']:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 75, 219, 0.35);
+}
+
+.auth form button[type='submit']:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 75, 219, 0.25);
+}
+
+.auth form button[type='submit']:disabled {
+  box-shadow: none;
+}
+
+/* Profile heading lines up with the cards below it */
+.profile > h1 {
+  max-width: 420px;
+  margin: 0 auto 1rem;
+}
+
+/* Browser autofill: keep fields looking like the rest of the form */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Small print under the sign-up button */
+.form-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+/* Footer */
+.site-footer {
+  margin-top: 2rem;
+  padding: 1.25rem 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.site-footer p {
+  margin: 0 0 0.4rem;
+}
+
+.site-footer a {
+  margin: 0 0.5rem;
+}
+
+/* Terms and Privacy pages */
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.doc h2 {
+  margin: 1.6rem 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.doc p,
+.doc li {
+  color: var(--text);
+}
+
+.doc .doc-date {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+/* Friendly empty and not-found screens */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.empty-state h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+}
+
+.empty-state p {
+  margin: 0 0 1.1rem;
+  color: var(--text-soft);
+}
+
+.empty-state .btn-primary,
+.empty-state .btn-accent {
+  display: inline-block;
+  margin: 0 0.3rem;
+}
+
+.not-found {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.not-found .big {
+  margin: 0 0 0.5rem;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.not-found p {
+  margin: 0 0 1.25rem;
+  color: var(--text-soft);
+}
+
+/* Loading skeleton cards on Browse */
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.sk-img,
+.sk-line {
+  background: linear-gradient(90deg, #eceef5 25%, #f6f7fb 50%, #eceef5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.sk-img {
+  aspect-ratio: 4 / 3;
+}
+
+.sk-body {
+  padding: 0.75rem;
+}
+
+.sk-line {
+  height: 0.8rem;
+  margin-bottom: 0.55rem;
+  border-radius: 6px;
+}
+
+.sk-line.mid {
+  width: 65%;
+}
+
+.sk-line.short {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* While a new search loads, keep the old cards but fade them (no flicker) */
+.listing-grid.is-loading {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-img,
+  .sk-line {
+    animation: none;
+  }
+  .auth form button[type='submit']:hover:not(:disabled),
+  .auth form button[type='submit']:active:not(:disabled) {
+    transform: none;
+  }
+}

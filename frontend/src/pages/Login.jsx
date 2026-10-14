@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { useToast } from '../ToastContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -139,6 +139,14 @@ export default function Login() {
         <button type="submit" disabled={busy}>
           {busy ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}
         </button>
+
+        {mode === 'signup' && (
+          <p className="form-note">
+            By creating an account you agree to our <Link to="/terms">Terms</Link> and{' '}
+            <Link to="/privacy">Privacy</Link>. Your WhatsApp number is shown to logged-in
+            students who contact you.
+          </p>
+        )}
       </form>
     </div>
   )

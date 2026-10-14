@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import ListingCard from '../components/ListingCard'
 import Dropdown from '../components/Dropdown'
@@ -13,7 +13,7 @@ const SORT_OPTIONS = [
 export default function Browse() {
   // States
   const [listings, setListings] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // true at first, so no "empty" flash
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
@@ -86,6 +86,17 @@ export default function Browse() {
     setPage(1)
   }, [categoryId, sort])
 
+  // Is a search or filter in use? Decides which empty-state message to show.
+  const filtersActive = Boolean(debouncedSearch) || categoryId !== null
+
+  function clearFilters() {
+    setSearch('')
+    setDebouncedSearch('')
+    setCategoryId(null)
+    setSort('newest')
+    setPage(1)
+  }
+
   return (
     <div>
       <h1>Browse Listings</h1>
@@ -126,17 +137,48 @@ export default function Browse() {
         </div>
       </div>
 
-      {/* Loading state */}
-      {loading && listings.length === 0 && <p>Loading listings...</p>}
-
-      {/* Empty state */}
-      {!loading && listings.length === 0 && total === 0 && (
-        <p>No listing found</p>
+      {/* Loading state: grey placeholder cards */}
+      {loading && listings.length === 0 && (
+        <div className="listing-grid" aria-busy="true" aria-label="Loading listings">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div className="skeleton-card" key={i}>
+              <div className="sk-img" />
+              <div className="sk-body">
+                <div className="sk-line" />
+                <div className="sk-line mid" />
+                <div className="sk-line short" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Listing grid */}
-      {!loading && listings.length > 0 && (
-        <div className="listing-grid">
+      {/* Empty state */}
+      {!loading && !error && listings.length === 0 && total === 0 && (
+        <div className="empty-state">
+          {filtersActive ? (
+            <>
+              <h2>No listings match your search</h2>
+              <p>Try a different word, or remove the filters.</p>
+              <button type="button" className="btn-primary" onClick={clearFilters}>
+                Clear filters
+              </button>
+            </>
+          ) : (
+            <>
+              <h2>No listings yet</h2>
+              <p>Be the first to post something for sale.</p>
+              <Link to="/sell" className="btn-accent">
+                Sell an item
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Listing grid: stays on screen (faded) while a new search loads */}
+      {listings.length > 0 && (
+        <div className={`listing-grid ${loading ? 'is-loading' : ''}`}>
           {listings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
