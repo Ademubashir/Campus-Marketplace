@@ -112,9 +112,11 @@ def get_listing(listing_id):
 # Placeholder routes for signup (Step 2 will implement them)
 VALID_CONDITIONS = ("new", "used")
 
-UPLOAD_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads"
-)
+def _upload_dir():
+    """Where photos are stored (the UPLOAD_FOLDER setting)."""
+    return str(current_app.config["UPLOAD_FOLDER"])
+
+
 MAX_PHOTOS = 5
 MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB per photo
 
@@ -149,11 +151,12 @@ def _read_photos(files, already_have=0):
 
 def _save_photos(listing, photos):
     """Write files under random names and add their rows (caller commits)."""
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    upload_dir = _upload_dir()
+    os.makedirs(upload_dir, exist_ok=True)
     start = len(listing.photos)
     for i, (data, ext) in enumerate(photos):
         name = f"{uuid.uuid4().hex}.{ext}"
-        with open(os.path.join(UPLOAD_DIR, name), "wb") as out:
+        with open(os.path.join(upload_dir, name), "wb") as out:
             out.write(data)
         db.session.add(
             ListingPhoto(
@@ -165,7 +168,7 @@ def _save_photos(listing, photos):
 
 
 def _delete_photo_file(photo):
-    path = os.path.join(UPLOAD_DIR, os.path.basename(photo.url))
+    path = os.path.join(_upload_dir(), os.path.basename(photo.url))
     if os.path.isfile(path):
         os.remove(path)
 
@@ -359,4 +362,4 @@ def delete_photo(listing_id, photo_id):
 
 @bp.route("/photos/<filename>", methods=["GET"])
 def serve_photo(filename):
-    return send_from_directory(UPLOAD_DIR, filename)
+    return send_from_directory(_upload_dir(), filename)
