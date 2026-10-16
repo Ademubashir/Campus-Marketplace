@@ -109,7 +109,7 @@ def get_listing(listing_id):
     ), 200
 
 
-# Placeholder routes for signup (Step 2 will implement them)
+# Helpers and routes for creating, editing and deleting listings and their photos
 VALID_CONDITIONS = ("new", "used")
 
 def _upload_dir():

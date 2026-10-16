@@ -3,6 +3,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+from extensions import limiter, user_key, PASSWORD_LIMIT
 from models import db, User
 
 bp = Blueprint("users", __name__, url_prefix="/users")
@@ -74,6 +75,7 @@ def logout_other_devices():
 
 @bp.route("/me/password", methods=["POST"])
 @jwt_required()
+@limiter.limit(PASSWORD_LIMIT, key_func=user_key, deduct_when=lambda r: r.status_code == 400)
 def change_password():
     """Change the password. This also logs out every other device."""
     from utils import issue_token

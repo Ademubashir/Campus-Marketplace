@@ -49,12 +49,10 @@ Copy `.env.example` to `.env` and fill it in (your database password and two lon
 python -m flask --app app db upgrade
 ```
 
-Add the categories (run this in `psql` against `campus_marketplace`):
+Add the categories (safe to run more than once):
 
-```sql
-INSERT INTO categories (name, slug) VALUES
-  ('Textbooks', 'textbooks'), ('Electronics', 'electronics'), ('Clothing', 'clothing'),
-  ('Furniture', 'furniture'), ('Sports', 'sports'), ('Other', 'other');
+```bash
+python seed.py
 ```
 
 Start the API on port 5000:
@@ -82,8 +80,25 @@ To try it on a phone, expose the Vite port with a tunnel such as `ngrok http 517
 - Passwords are stored as salted hashes, never in plain text.
 - Login tokens last 3 days and carry a version number, so a user can cut off every other device at once.
 - Uploaded photos get random file names and are checked by their actual content.
+- Login and signup are rate limited (wrong passwords are counted per email), and the app refuses to start in production without real secrets.
 - Secrets live in `backend/.env`, which is not committed.
+
+## Deploying
+
+In production, Flask serves the built React site and the API from one address, and `gunicorn` runs the app.
+
+1. **Build the site:** `cd frontend && npm install && npm run build` (makes `frontend/dist`).
+2. **Install the Python packages:** `cd backend && pip install -r requirements.txt`.
+3. **Set these environment variables** on the host (never put them in a file in the repo):
+   - `FLASK_ENV=production`: the app then refuses to start unless the secrets below are real.
+   - `SECRET_KEY` and `JWT_SECRET_KEY`: two different random values, each at least 32 characters.
+   - `DATABASE_URL`: the production PostgreSQL address.
+   - `UPLOAD_FOLDER`: where photos are stored (point it at a permanent disk, or photos vanish on restart).
+   - Optional: `TRUSTED_PROXIES` (default 1), `LOGIN_FAIL_LIMIT`, `SIGNUP_LIMIT`, `RATELIMIT_STORAGE_URI`.
+4. **Create the tables:** `python -m flask --app app db upgrade`.
+5. **Add the categories:** `python seed.py` (safe to run twice).
+6. **Start the server:** `gunicorn wsgi:app` (run from the `backend` folder; settings are in `gunicorn.conf.py`).
 
 ## Status
 
-Works end to end on desktop and on phones. Not deployed yet. Still to do: forgot-password by email, reporting a listing, previewing and removing single photos, and a production setup (production server, permanent photo storage, rate limiting).
+Works end to end on desktop and on phones, and is ready for a first deployment. Still to do: choose a host and permanent photo storage, forgot-password by email, reporting a listing, and previewing and removing single photos.

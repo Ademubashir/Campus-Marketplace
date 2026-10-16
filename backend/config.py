@@ -44,6 +44,18 @@ class Config:
     # --- Database ---
     SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Hosted databases close idle connections. Test a connection before using it
+    # (pool_pre_ping) and replace old ones (pool_recycle), so the first request
+    # after a quiet period doesn't fail.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 1800}
+
+    # --- Rate limiting (Flask-Limiter) ---
+    # Counters live in memory by default. With several server workers, each keeps
+    # its own count; set RATELIMIT_STORAGE_URI (for example to a Redis address) to
+    # share one count across all of them.
+    RATELIMIT_STORAGE_URI = _get("RATELIMIT_STORAGE_URI", "memory://")
+    RATELIMIT_HEADERS_ENABLED = True
+    RATELIMIT_ENABLED = _get("RATELIMIT_ENABLED", "true").lower() != "false"
 
     # --- App ---
     SECRET_KEY = _get("SECRET_KEY", "dev-secret-key")
