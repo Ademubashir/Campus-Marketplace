@@ -2,6 +2,16 @@
 
 A web app where university students buy and sell items (textbooks, gadgets, clothes, furniture) with each other. Buyers contact sellers directly on WhatsApp, so there is no chat system to build or run.
 
+<p align="center">
+  <img src="docs/screenshots/login.png" alt="Login and sign up" width="23%" />
+  <img src="docs/screenshots/browse.png" alt="Browse listings with search and filters" width="23%" />
+  <img src="docs/screenshots/listings.png" alt="Listings" width="23%" />
+  <img src="docs/screenshots/sell.png" alt="Sell an item" width="23%" />
+</p>
+<p align="center"><sub>Login and sign up &middot; Browse &middot; Listings &middot; Sell an item</sub></p>
+
+**Live demo:** coming soon.
+
 ## Features
 
 - **Accounts:** sign up and log in, change password, and log out of all other devices if a phone is lost.
