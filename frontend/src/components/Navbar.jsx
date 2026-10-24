@@ -22,7 +22,7 @@ export default function Navbar() {
     <>
       {/* Top bar */}
       <nav>
-        <Link to="/">Campus Marketplace</Link>
+        <Link to="/">UniMart</Link>
 
         <span className="nav-links">
           <NavLink to="/" end>

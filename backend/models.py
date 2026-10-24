@@ -1,4 +1,4 @@
-"""SQLAlchemy models for the Campus Marketplace MVP.
+"""SQLAlchemy models for the UniMart MVP.
 
 Notes approved in plan:
 - users.phone required (international format, app validates)

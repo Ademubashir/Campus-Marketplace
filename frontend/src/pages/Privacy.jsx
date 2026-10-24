@@ -4,7 +4,7 @@ export default function Privacy() {
       <h1>Privacy</h1>
       <p className="doc-date">Last updated: October 2026</p>
 
-      <p>This page explains what Campus Marketplace keeps about you and who can see it.</p>
+      <p>This page explains what UniMart keeps about you and who can see it.</p>
 
       <h2>What we keep</h2>
       <ul>

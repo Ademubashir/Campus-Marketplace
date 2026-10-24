@@ -1,4 +1,4 @@
-# Campus Marketplace
+# UniMart
 
 A web app where university students buy and sell items (textbooks, gadgets, clothes, furniture) with each other. Buyers contact sellers directly on WhatsApp, so there is no chat system to build or run.
 

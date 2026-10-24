@@ -5,7 +5,7 @@ export default function Terms() {
       <p className="doc-date">Last updated: October 2026</p>
 
       <p>
-        Campus Marketplace helps students buy and sell items with each other. By creating an
+        UniMart helps students buy and sell items with each other. By creating an
         account or using the site, you agree to these terms.
       </p>
 

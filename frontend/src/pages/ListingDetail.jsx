@@ -63,7 +63,7 @@ export default function ListingDetail() {
   // WhatsApp link
   const whatsappLink = phoneDigits
     ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(
-        `Hi, I'm interested in your "${listing?.title}" listed for ${formatPrice(listing?.price)} on Campus Marketplace.`
+        `Hi, I'm interested in your "${listing?.title}" listed for ${formatPrice(listing?.price)} on UniMart.`
       )}`
     : null
 

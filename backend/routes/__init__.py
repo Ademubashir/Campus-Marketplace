@@ -1,4 +1,4 @@
-"""Route registration for the Campus Marketplace API.
+"""Route registration for the UniMart API.
 
 Each route module defines its own Blueprint as ``bp``. Blueprints are
 registered here under a shared ``/api/v1`` prefix.
