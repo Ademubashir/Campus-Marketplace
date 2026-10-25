@@ -13,6 +13,7 @@ def register_routes(app):
     from routes.categories import bp as categories_bp
     from routes.listings import bp as listings_bp
     from routes.users import bp as users_bp
+    from routes.admin import bp as admin_bp
 
     api = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -20,5 +21,6 @@ def register_routes(app):
     api.register_blueprint(categories_bp)
     api.register_blueprint(listings_bp)
     api.register_blueprint(users_bp)
+    api.register_blueprint(admin_bp)
 
     app.register_blueprint(api)

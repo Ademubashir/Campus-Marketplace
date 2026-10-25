@@ -29,7 +29,7 @@ from extensions import limiter
 from routes import register_routes
 
 # Lazy imports to avoid circular imports.
-from models import User, Category, Listing, ListingPhoto  # noqa: F401
+from models import Admin, User, Category, Listing, ListingPhoto  # noqa: F401
 
 # The built React site (made by `npm run build` in the frontend folder).
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
@@ -92,8 +92,25 @@ def create_app(config_class=Config):
     # token_version (they logged out of all devices or changed their password).
     @jwt.token_in_blocklist_loader
     def _token_is_revoked(jwt_header, jwt_data):
+        is_admin_token = jwt_data.get("role") == "admin"
+        on_admin_side = request.path == "/api/v1/admin" or request.path.startswith("/api/v1/admin/")
+        # A token only works on its own side: admin tokens on the admin routes,
+        # student tokens everywhere else.
+        if is_admin_token != on_admin_side:
+            return True
+        if is_admin_token:
+            admin = db.session.get(Admin, int(jwt_data["sub"]))
+            return (
+                admin is None
+                or not admin.is_active
+                or jwt_data.get("tv", 0) != admin.token_version
+            )
         user = db.session.get(User, int(jwt_data["sub"]))
-        return user is None or jwt_data.get("tv", 0) != user.token_version
+        return (
+            user is None
+            or user.is_suspended  # a suspended student's logins stop working at once
+            or jwt_data.get("tv", 0) != user.token_version
+        )
 
     @jwt.revoked_token_loader
     def _revoked_token(jwt_header, jwt_data):

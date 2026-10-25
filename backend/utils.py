@@ -1,6 +1,6 @@
 """Password and phone-number helpers."""
 import re
-
+from flask import current_app
 from flask_jwt_extended import create_access_token
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -60,4 +60,12 @@ def issue_token(user):
     """
     return create_access_token(
         identity=str(user.id), additional_claims={"tv": user.token_version}
+    )
+
+def issue_admin_token(admin):
+    """A 24-hour login token for an admin. The role claim keeps it off student routes."""
+    return create_access_token(
+        identity=str(admin.id),
+        additional_claims={"tv": admin.token_version, "role": "admin"},
+        expires_delta=current_app.config["JWT_ADMIN_TOKEN_EXPIRES"],
     )
