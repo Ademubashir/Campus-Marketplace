@@ -156,6 +156,10 @@ def create_app(config_class=Config):
     @app.route("/health")
     def health():
         return jsonify({"status": "ok", "service": "campus-marketplace"}), 200
+        # The support email, so pages can show it and it can change without a rebuild.
+    @app.route("/api/v1/site")
+    def site_info():
+        return jsonify({"support_email": app.config["SUPPORT_EMAIL"]}), 200
 
     # Serve the built React site from the same address as the API.
     # Real files (JS, CSS, images) are sent as they are. Any other address, such as

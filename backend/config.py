@@ -65,6 +65,7 @@ class Config:
     JWT_SECRET_KEY = _get("JWT_SECRET_KEY", "dev-jwt-secret-key")
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=3)  # stay logged in for three days
     JWT_ADMIN_TOKEN_EXPIRES = timedelta(hours=24)  # admins: fixed, counted from sign-in
+    SUPPORT_EMAIL = _get("SUPPORT_EMAIL", "support.unimart.ng@gmail.com")
 
     # --- Uploads ---
     # UPLOAD_FOLDER can point at a permanent disk on the host.

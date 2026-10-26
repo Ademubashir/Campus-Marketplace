@@ -30,6 +30,8 @@ def list_listings():
     status = request.args.get("status")
     if status in ("available", "sold"):
         query = query.filter(Listing.status == status)
+            # Listings of suspended students are hidden.
+    query = query.filter(Listing.seller.has(User.is_suspended.is_(False)))
 
     if q:
         # Escape backslash first, then % and _, so they match literally.
@@ -229,8 +231,12 @@ def _clean_fields(data, require_all):
             category_id = int(data.get("category_id"))
         except (TypeError, ValueError):
             return None, "category_id must be a number"
-        if db.session.get(Category, category_id) is None:
+        category = db.session.get(Category, category_id)
+        if category is None:
             return None, "Category does not exist"
+        # Hidden categories can't be chosen for new listings (existing ones may still be edited).
+        if require_all and category.is_hidden:
+            return None, "That category is no longer available"
         clean["category_id"] = category_id
 
     if "description" in data:

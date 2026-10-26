@@ -1,6 +1,6 @@
 """Auth routes: signup, login."""
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
 from extensions import (
     limiter,
@@ -75,6 +75,13 @@ def login():
     user = User.query.filter(db.func.lower(User.email) == email).first() if email else None
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
+
+    # Checked only after the password is right, so nobody learns an account's
+    # status without knowing the password.
+    if user.is_suspended:
+        reason = user.suspension_reason or "no reason was given"
+        support = current_app.config["SUPPORT_EMAIL"]
+        return jsonify({"error": f"Your account is suspended: {reason}. Contact {support}."}), 403
 
     access_token = issue_token(user)
     return jsonify({"user": {"id": user.id, "email": user.email}, "token": access_token}), 200
