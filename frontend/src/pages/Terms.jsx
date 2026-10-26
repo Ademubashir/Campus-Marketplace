@@ -1,4 +1,7 @@
+import { useSite } from '../SiteContext'
+  
 export default function Terms() {
+  const { supportEmail } = useSite()
   return (
     <div className="doc">
       <h1>Terms of use</h1>
@@ -48,6 +51,12 @@ export default function Terms() {
 
       <h2>Changes</h2>
       <p>We may update these terms. If you keep using the site after a change, you accept it.</p>
+
+            <h2>Contact</h2>
+      <p>
+        Questions, or want to report a problem? Email{' '}
+        <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+      </p>
     </div>
   )
 }

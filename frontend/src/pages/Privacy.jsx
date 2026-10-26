@@ -1,4 +1,7 @@
+import { useSite } from '../SiteContext'
+  
 export default function Privacy() {
+  const { supportEmail } = useSite()
   return (
     <div className="doc">
       <h1>Privacy</h1>
@@ -25,6 +28,12 @@ export default function Privacy() {
         </li>
         <li>
           Your email address and password are never shown to other users.
+        </li>
+
+        <li>
+          UniMart administrators can see names, emails and WhatsApp numbers, so they can look
+          after the site. They can suspend an account that breaks the rules, and the reason is
+          shown to that student.
         </li>
         <li>
           Listing photos can be opened by anyone who has the exact link to the photo, even though
@@ -56,6 +65,11 @@ export default function Privacy() {
       <p>
         You can delete any of your listings, and its photos, at any time from the My listings
         page. Deleting a whole account is not built into the site yet.
+      </p>
+
+            <h2>Contact</h2>
+      <p>
+        Questions about your data? Email <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
       </p>
     </div>
   )
