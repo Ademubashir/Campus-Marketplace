@@ -51,7 +51,14 @@ Web app where students buy and sell items (textbooks, gadgets, clothes) within a
 ## Progress
 - Done: backend (setup, tables, auth, listings, photos, browse, sold items, profile, change password, log out other devices) and the whole React frontend (all pages above), tested on desktop and on a phone through ngrok. Final touches are done (tab title and icon, footer, Terms and Privacy, empty states, skeletons, 404). Production hardening is done (required secrets, debug off, one address, rate limits, seed script, gunicorn).
 - Design is done: palette, fonts, Home page, navbar, custom dropdown, button effects, show/hide password, toasts, listing page upgrades.
-- Next: choose a host (including permanent photo storage), deploy, then forgot-password by email, report a listing, photo previews and removing a single photo.
+
+- Next: the admin screens (frontend), then the admin address setting, forgot-password by email, report a listing, and hosting.
+## Admin area
+- Admins are separate accounts (`admins` table), not students. Create them with `python make_admin.py` (add `--must-change` so they pick their own password at first sign-in).
+- An admin login token carries `role: "admin"`, lasts 24 hours from sign-in, and works only on `/api/v1/admin/*`. A student token never works there.
+- Admin API (all need an admin token except login): `POST /admin/auth/login`, `GET /admin/auth/me`, `POST /admin/auth/logout`, `POST /admin/auth/password`, `GET /admin/stats`, `GET /admin/users`, `PATCH /admin/users/:id/suspend` (reason required), `PATCH /admin/users/:id/reinstate`, `GET/POST /admin/admins`, `PATCH /admin/admins/:id`, `GET /admin/listings`, `DELETE /admin/listings/:id`, `GET/POST /admin/categories`, `PATCH /admin/categories/:id`, `GET /admin/log`.
+- A suspended student gets a 403 at login with the reason and the support email, their listings are hidden, and hidden categories are left out of the public category list.
+- The support email comes from the `SUPPORT_EMAIL` setting (`GET /api/v1/site`).
 
 ## Rules
 - Never read, print, or ask for the contents of `backend/.env` or any password. I edit `.env` myself.
