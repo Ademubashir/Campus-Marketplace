@@ -2,6 +2,7 @@
 // Thanks to the Vite proxy, "/api/..." is forwarded to localhost:5000.
 
 const TOKEN_KEY = 'token'
+const ADMIN_TOKEN_KEY = 'admin_token'
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -13,6 +14,18 @@ export function setToken(token) {
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
+}
+
+export function getAdminToken() {
+  return localStorage.getItem(ADMIN_TOKEN_KEY)
+}
+
+export function setAdminToken(token) {
+  localStorage.setItem(ADMIN_TOKEN_KEY, token)
+}
+
+export function clearAdminToken() {
+  localStorage.removeItem(ADMIN_TOKEN_KEY)
 }
 
 export async function api(path, { method = 'GET', body } = {}) {
@@ -27,7 +40,8 @@ export async function api(path, { method = 'GET', body } = {}) {
     options.body = JSON.stringify(body)
   }
 
-  const token = getToken()
+  // Decide which token to send based on the path
+  const token = path.startsWith('/admin') ? getAdminToken() : getToken()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -41,15 +55,26 @@ export async function api(path, { method = 'GET', body } = {}) {
     // some responses have no body
   }
 
+  // A saved login stopped working (usually: expired). Tell the app so it can
+  // log the user out cleanly and send them to the login page.
   if (res.status === 401) {
-    clearToken() // the token is missing, wrong, or expired
-    // A saved login stopped working (usually: expired). Tell the app so it can
-    // log the user out cleanly and send them to the login page.
-    if (token) window.dispatchEvent(new Event('auth:expired'))
+    if (path.startsWith('/admin')) {
+      // Only clear the admin token if we actually sent one.
+      if (token) {
+        clearAdminToken()
+        window.dispatchEvent(new Event('admin:expired'))
+      }
+    } else {
+      clearToken()
+      if (token) window.dispatchEvent(new Event('auth:expired'))
+    }
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || 'Something went wrong')
+    const err = new Error(data?.error || 'Something went wrong')
+    err.code = data?.code
+    err.status = res.status
+    throw err
   }
   return data
 }

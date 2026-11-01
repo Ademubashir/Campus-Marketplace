@@ -63,9 +63,25 @@ class Config:
 
     # --- JWT ---
     JWT_SECRET_KEY = _get("JWT_SECRET_KEY", "dev-jwt-secret-key")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=3)  # stay logged in for three days
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=int(_get("STUDENT_LOGIN_DAYS", "30")))  # students stay logged in
+    # (suspending a student, changing a password and "log out other devices" all cut off
+    # existing logins straight away, however long they would otherwise last)
     JWT_ADMIN_TOKEN_EXPIRES = timedelta(hours=24)  # admins: fixed, counted from sign-in
     SUPPORT_EMAIL = _get("SUPPORT_EMAIL", "support.unimart.ng@gmail.com")
+
+    # --- Email to students (optional) ---
+    # Listing approved / rejected emails go out through any SMTP account. Leave the
+    # MAIL_* values empty and the app simply skips sending (see notifications.py).
+    MAIL_SERVER = _get("MAIL_SERVER", "")
+    MAIL_PORT = int(_get("MAIL_PORT", "587"))
+    MAIL_USERNAME = _get("MAIL_USERNAME", "")
+    MAIL_PASSWORD = _get("MAIL_PASSWORD", "")
+    MAIL_FROM = _get("MAIL_FROM", "")  # for example: UniMart <you@gmail.com>
+    # Brevo's web API sends over ordinary HTTPS, so it works where SMTP ports are blocked.
+    # When BREVO_API_KEY is set it is used instead of SMTP.
+    BREVO_API_KEY = _get("BREVO_API_KEY", "")
+    # The address of the website, used for the links inside emails.
+    FRONTEND_URL = _get("FRONTEND_URL", "http://localhost:5173")
 
     # --- Uploads ---
     # UPLOAD_FOLDER can point at a permanent disk on the host.
@@ -96,6 +112,18 @@ def check_production_settings(config):
     database_url = _get("DATABASE_URL", "")
     if not database_url or "USER:PASSWORD" in database_url:
         problems.append("DATABASE_URL must be set to your production database")
+
+    # New students must confirm their email before posting, so the site needs to be
+    # able to send email, or nobody new could ever post.
+    has_brevo = bool(config.get("BREVO_API_KEY"))
+    has_smtp = all(config.get(name) for name in ("MAIL_SERVER", "MAIL_USERNAME", "MAIL_PASSWORD"))
+    if not (has_brevo or has_smtp):
+        problems.append(
+            "Email must be set up (BREVO_API_KEY and MAIL_FROM, or the MAIL_* settings): "
+            "new students have to confirm their email before they can post"
+        )
+    if not _get("FRONTEND_URL") or "localhost" in _get("FRONTEND_URL", ""):
+        problems.append("FRONTEND_URL must be your real website address, for the links in emails")
 
     if problems:
         raise RuntimeError(

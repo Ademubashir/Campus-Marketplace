@@ -14,6 +14,7 @@ export default function Browse() {
   // States
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true) // true at first, so no "empty" flash
+  const [firstLoad, setFirstLoad] = useState(true) // grey placeholders only before the very first results
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
@@ -67,12 +68,14 @@ export default function Browse() {
           setPages(data.pages)
           setTotal(data.total)
           setLoading(false)
+          setFirstLoad(false)
         }
       })
       .catch((err) => {
         if (!cancelled) {
           setError(err.message)
           setLoading(false)
+          setFirstLoad(false)
         }
       })
 
@@ -81,10 +84,8 @@ export default function Browse() {
     }
   }, [debouncedSearch, categoryId, sort, page])
 
-  // Reset to page 1 when category or sort changes
-  useEffect(() => {
-    setPage(1)
-  }, [categoryId, sort])
+  // (Changing the category or sort goes back to page 1 in the same step, below. Doing it
+  // in a separate effect fetched the old page first, which made the list flicker.)
 
   // Is a search or filter in use? Decides which empty-state message to show.
   const filtersActive = Boolean(debouncedSearch) || categoryId !== null
@@ -118,7 +119,10 @@ export default function Browse() {
           <Dropdown
             label="Category"
             value={categoryId ?? ''}
-            onChange={(val) => setCategoryId(val === '' ? null : Number(val))}
+            onChange={(val) => {
+              setCategoryId(val === '' ? null : Number(val))
+              setPage(1)
+            }}
             options={[
               { value: '', label: 'ALL categories' },
               ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
@@ -131,14 +135,17 @@ export default function Browse() {
           <Dropdown
             label="Sort by"
             value={sort}
-            onChange={setSort}
+            onChange={(val) => {
+              setSort(val)
+              setPage(1)
+            }}
             options={SORT_OPTIONS}
           />
         </div>
       </div>
 
-      {/* Loading state: grey placeholder cards */}
-      {loading && listings.length === 0 && (
+      {/* Loading state: grey placeholder cards, only before the very first results */}
+      {loading && firstLoad && (
         <div className="listing-grid" aria-busy="true" aria-label="Loading listings">
           {Array.from({ length: 8 }, (_, i) => (
             <div className="skeleton-card" key={i}>
@@ -153,9 +160,9 @@ export default function Browse() {
         </div>
       )}
 
-      {/* Empty state */}
-      {!loading && !error && listings.length === 0 && total === 0 && (
-        <div className="empty-state">
+      {/* Empty state: stays on screen (faded) while a new search loads, so it does not blink */}
+      {!firstLoad && !error && listings.length === 0 && (
+        <div className={`empty-state ${loading ? 'is-loading' : ''}`}>
           {filtersActive ? (
             <>
               <h2>No listings match your search</h2>

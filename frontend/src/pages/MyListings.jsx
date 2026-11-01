@@ -82,18 +82,36 @@ export default function MyListings() {
                   {l.title}
                 </Link>
                 <span>{formatPrice(l.price)}</span>
-                <span className={l.status === 'sold' ? 'status sold' : 'status'}>
-                  {l.status === 'sold' ? 'Sold' : 'Available'}
-                </span>
+                {l.review_status === 'approved' ? (
+                  <span className={l.status === 'sold' ? 'status sold' : 'status'}>
+                    {l.status === 'sold' ? 'Sold' : 'Available'}
+                  </span>
+                ) : (
+                  <span className={`status ${l.review_status}`}>
+                    {l.review_status === 'pending' ? 'Pending review' : 'Rejected'}
+                  </span>
+                )}
+                {l.review_status === 'pending' && (
+                  <span className="review-note">
+                    A moderator will check it before it goes online.
+                  </span>
+                )}
+                {l.review_status === 'rejected' && (
+                  <span className="review-note rejected">
+                    Reason: {l.rejection_reason}. Edit the listing to send it for review again.
+                  </span>
+                )}
               </div>
 
               <div className="my-actions">
                 <Link to={`/listings/${l.id}/edit`} className="btn btn-outline">
                   Edit
                 </Link>
-                <button type="button" onClick={() => toggleSold(l)}>
-                  {l.status === 'sold' ? 'Mark available' : 'Mark sold'}
-                </button>
+                {l.review_status === 'approved' && (
+                  <button type="button" onClick={() => toggleSold(l)}>
+                    {l.status === 'sold' ? 'Mark available' : 'Mark sold'}
+                  </button>
+                )}
                 <button type="button" className="danger" onClick={() => remove(l)}>
                   Delete
                 </button>

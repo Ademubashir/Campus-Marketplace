@@ -15,6 +15,8 @@ limiter = Limiter(key_func=get_remote_address)
 LOGIN_IP_LIMIT = os.environ.get("LOGIN_IP_LIMIT", "120 per minute")
 LOGIN_FAIL_LIMIT = os.environ.get("LOGIN_FAIL_LIMIT", "8 per 15 minutes")  # wrong passwords, per email
 SIGNUP_LIMIT = os.environ.get("SIGNUP_LIMIT", "60 per hour")
+RESET_IP_LIMIT = os.environ.get("RESET_IP_LIMIT", "60 per hour")  # "forgot password" requests, per address
+RESET_EMAIL_LIMIT = os.environ.get("RESET_EMAIL_LIMIT", "5 per hour")  # per email address, so no mailbox gets flooded
 PASSWORD_LIMIT = os.environ.get("PASSWORD_LIMIT", "10 per hour")  # wrong current password, per user
 
 

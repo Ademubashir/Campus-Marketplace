@@ -30,6 +30,12 @@ class User(db.Model):
     )
     suspension_reason = db.Column(db.Text)  # shown to the student, so keep it polite
     suspended_at = db.Column(db.DateTime)
+    # Becomes true when the student clicks the link we email them. Until then they can
+    # browse and log in, but cannot post listings.
+    email_verified = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.text("false")
+    )
+    verification_sent_at = db.Column(db.DateTime)  # keeps "Resend" from being spammed
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(
         db.DateTime, server_default=db.func.now(), onupdate=db.func.now()
@@ -73,6 +79,10 @@ class Listing(db.Model):
         db.CheckConstraint(
             "status IN ('available', 'sold')", name="ck_listings_status"
         ),
+        db.CheckConstraint(
+            "review_status IN ('pending', 'approved', 'rejected')",
+            name="ck_listings_review_status",
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -89,6 +99,18 @@ class Listing(db.Model):
     status = db.Column(
         db.String(10), nullable=False, server_default="available"
     )  # CHECK constraint applied in migration
+
+    # Review: a new listing stays hidden until a moderator approves it.
+    review_status = db.Column(
+        db.String(10), nullable=False, server_default="pending", index=True
+    )  # 'pending', 'approved' or 'rejected' (CHECK constraint above)
+    rejection_reason = db.Column(db.Text)  # shown to the seller when rejected
+    reviewed_by = db.Column(db.Integer, db.ForeignKey("admins.id", ondelete="SET NULL"))
+    reviewed_at = db.Column(db.DateTime)
+    # When it entered the review queue (again, after an edit). The oldest waits longest.
+    submitted_at = db.Column(
+        db.DateTime, nullable=False, server_default=db.func.now()
+    )
 
     # Timestamps
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -133,6 +155,11 @@ class Admin(db.Model):
     a student can never sign in as an admin, and an admin is not a student."""
 
     __tablename__ = "admins"
+    __table_args__ = (
+        db.CheckConstraint(
+            "role IN ('super_admin', 'moderator', 'support')", name="ck_admins_role"
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -141,6 +168,9 @@ class Admin(db.Model):
     is_active = db.Column(
         db.Boolean, nullable=False, default=True, server_default=db.text("true")
     )
+    # What this admin may do (see permissions.py). A new admin gets the most limited
+    # role unless a super admin picks another one.
+    role = db.Column(db.String(20), nullable=False, default="support")
     # True for a new admin until they choose their own password at first sign-in.
     must_change_password = db.Column(
         db.Boolean, nullable=False, default=False, server_default=db.text("false")

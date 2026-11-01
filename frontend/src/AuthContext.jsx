@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { api, setToken, clearToken, getToken } from './api'
 
 const AuthContext = createContext(null)
@@ -51,8 +51,18 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // Load the profile again, for example after the email has just been confirmed.
+  const refreshUser = useCallback(async () => {
+    if (!getToken()) return
+    try {
+      setUser(await api('/users/me'))
+    } catch {
+      // If this fails the next page load will sort it out.
+    }
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

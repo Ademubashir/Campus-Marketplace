@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import Dropdown from '../components/Dropdown'
@@ -25,6 +25,7 @@ export default function CreateListing() {
     description: '',
   })
   const [files, setFiles] = useState([])
+  const fileInput = useRef(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -58,6 +59,12 @@ export default function CreateListing() {
     setFiles(chosen)
   }
 
+  // Take one photo out of the selection before posting.
+  function removeSelected(index) {
+    setFiles((current) => current.filter((_, i) => i !== index))
+    if (fileInput.current) fileInput.current.value = ''
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -77,9 +84,9 @@ export default function CreateListing() {
       if (form.description) data.append('description', form.description)
       files.forEach((f) => data.append('photos', f))
 
-      const listing = await api('/listings', { method: 'POST', body: data })
-      toast.success('Listing posted')
-      navigate(`/listings/${listing.id}`)
+      await api('/listings', { method: 'POST', body: data })
+      toast.success('Submitted for review. It will go online once a moderator approves it.')
+      navigate('/my-listings')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -144,15 +151,36 @@ export default function CreateListing() {
         <label>
           Photos (up to 5, JPEG, PNG or WebP)
           <input
+            ref={fileInput}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={handleFiles}
           />
         </label>
-        {files.length > 0 && <p>{files.length} photo(s) selected</p>}
+        {files.length > 0 && (
+          <ul className="selected-files">
+            {files.map((file, i) => (
+              <li key={`${file.name}-${i}`}>
+                <span>{file.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeSelected(i)}
+                  aria-label={`Remove ${file.name}`}
+                >
+                  &times;
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {error && <p className="error">{error}</p>}
+
+        <p className="hint">
+          A moderator checks every new listing before it appears on UniMart. We'll email you
+          when it's decided.
+        </p>
 
         <button type="submit" disabled={busy}>
           {busy ? 'Posting...' : 'Post listing'}

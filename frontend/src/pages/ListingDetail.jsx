@@ -77,6 +77,18 @@ export default function ListingDetail() {
 
   return (
     <>
+    {/* Only the owner can open a listing that is not online yet */}
+    {isOwner && listing.review_status === 'pending' && (
+      <p className="review-banner pending">
+        This listing is waiting for review. Only you can see it until a moderator approves it.
+      </p>
+    )}
+    {isOwner && listing.review_status === 'rejected' && (
+      <p className="review-banner rejected">
+        <strong>This listing was rejected:</strong> {listing.rejection_reason}. Edit it and save to
+        send it for review again.
+      </p>
+    )}
     <div className="detail-layout">
       {/* Left: photos */}
       <div className="detail-photos">

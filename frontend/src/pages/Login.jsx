@@ -46,7 +46,9 @@ export default function Login() {
       } else {
         await signup(form)
         // A short welcome after creating an account (not after every login)
-        toast.success(`Welcome, ${form.full_name.trim().split(' ')[0]}!`)
+        toast.success(
+          `Welcome, ${form.full_name.trim().split(' ')[0]}! Check your email to confirm your address before posting.`
+        )
       }
       navigate(goTo, { replace: true })
     } catch (err) {
@@ -135,6 +137,12 @@ export default function Login() {
         </label>
 
         {error && <p className="error">{error}</p>}
+
+        {mode === 'login' && (
+          <p className="form-note">
+            <Link to="/forgot-password">Forgot your password?</Link>
+          </p>
+        )}
 
         <button type="submit" disabled={busy}>
           {busy ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}

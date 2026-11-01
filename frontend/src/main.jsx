@@ -6,6 +6,7 @@ import App from './App.jsx'
 import { AuthProvider } from './AuthContext'
 import { ToastProvider } from './ToastContext'
 import { SiteProvider } from './SiteContext'
+import { AdminProvider } from './admin/AdminAuthContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <ToastProvider>
           <SiteProvider>
-            <App />
+            <AdminProvider>
+              <App />
+            </AdminProvider>
           </SiteProvider>
         </ToastProvider>
       </AuthProvider>

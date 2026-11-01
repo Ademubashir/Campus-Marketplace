@@ -111,7 +111,12 @@ export default function Profile() {
           </div>
           <div>
             <dt>Email</dt>
-            <dd>{user.email}</dd>
+            <dd>
+              {user.email}{' '}
+              <span className={`status ${user.email_verified ? '' : 'pending'}`}>
+                {user.email_verified ? 'Confirmed' : 'Not confirmed yet'}
+              </span>
+            </dd>
           </div>
           <div>
             <dt>WhatsApp</dt>

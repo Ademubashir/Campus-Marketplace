@@ -23,6 +23,7 @@ def get_me():
             "full_name": user.full_name,
             "phone": user.phone,
             "university": user.university,
+            "email_verified": user.email_verified,
             "created_at": user.created_at,
         }
     ), 200
@@ -51,6 +52,8 @@ def my_listings():
                 "category": listing.category.name if listing.category else None,
                 "condition": listing.condition,
                 "status": listing.status,
+                "review_status": listing.review_status,
+                "rejection_reason": listing.rejection_reason,
                 "first_photo_url": first_photo.url if first_photo else None,
                 "created_at": listing.created_at,
             }

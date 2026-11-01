@@ -4,12 +4,21 @@ import os
 import uuid
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, request, jsonify, current_app, send_from_directory
+from flask import Blueprint, request, jsonify, current_app, send_from_directory, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from models import db, Listing, ListingPhoto, Category, User
 
 bp = Blueprint("listings", __name__, url_prefix="/listings")
+
+
+def _publicly_visible(query):
+    """What the public may see: approved listings from students who are not suspended.
+    Every public listing page goes through this one rule."""
+    return query.filter(
+        Listing.review_status == "approved",
+        Listing.seller.has(User.is_suspended.is_(False)),
+    )
 
 
 @bp.route("", methods=["GET"])
@@ -30,8 +39,8 @@ def list_listings():
     status = request.args.get("status")
     if status in ("available", "sold"):
         query = query.filter(Listing.status == status)
-            # Listings of suspended students are hidden.
-    query = query.filter(Listing.seller.has(User.is_suspended.is_(False)))
+    # Only approved listings from students who are not suspended are shown.
+    query = _publicly_visible(query)
 
     if q:
         # Escape backslash first, then % and _, so they match literally.
@@ -89,6 +98,12 @@ def list_listings():
 def get_listing(listing_id):
     """Get a single listing's details."""
     listing = Listing.query.get_or_404(listing_id)
+    # A listing that is not public yet (or belongs to a suspended student) can only be
+    # opened by its owner. Everyone else gets "not found", as if it did not exist.
+    is_owner = listing.seller_id == _current_user_id()
+    is_public = listing.review_status == "approved" and not listing.seller.is_suspended
+    if not (is_public or is_owner):
+        abort(404)
     photos = [p.url for p in listing.photos]
     return jsonify(
         {
@@ -99,7 +114,12 @@ def get_listing(listing_id):
             "description": listing.description,
             "condition": listing.condition,
             "status": listing.status,
+            "review_status": listing.review_status,
+            # The reason is for the seller only.
+            "rejection_reason": listing.rejection_reason if is_owner else None,
             "photos": photos,
+            # The same photos with their ids, so the owner can remove one of them.
+            "photo_items": [{"id": p.id, "url": p.url} for p in listing.photos],
             "seller": {
                 "id": listing.seller.id,
                 "full_name": listing.seller.full_name,
@@ -195,6 +215,8 @@ def _listing_to_dict(listing):
         "description": listing.description,
         "condition": listing.condition,
         "status": listing.status,
+        "review_status": listing.review_status,
+        "rejection_reason": listing.rejection_reason,
         "photos": [p.url for p in listing.photos],
         "seller_id": listing.seller_id,
         "created_at": listing.created_at,
@@ -254,6 +276,36 @@ def _clean_fields(data, require_all):
     return clean, None
 
 
+# Changing these on an approved listing sends it back for another review.
+REVIEWED_FIELDS = ("title", "description", "category_id")
+
+
+def _same(a, b):
+    """Equal, treating a missing description and an empty one as the same."""
+    return (a if a is not None else "") == (b if b is not None else "")
+
+
+def _send_to_review(listing):
+    """Put a listing back in the review queue. It stays hidden until approved."""
+    if listing.review_status != "pending":
+        listing.submitted_at = db.func.now()  # joins the back of the queue
+    listing.review_status = "pending"
+    listing.rejection_reason = None
+    listing.reviewed_by = None
+    listing.reviewed_at = None
+
+
+def _needs_review_again(listing, changed_fields, photos_added=False):
+    """A rejected listing goes back to review after any change. An approved one only
+    when something a moderator checks changed: title, description, category or a new
+    photo. Changing the price, the condition or sold/available does not."""
+    if listing.review_status == "rejected":
+        return bool(changed_fields) or photos_added
+    if listing.review_status == "approved":
+        return photos_added or any(f in REVIEWED_FIELDS for f in changed_fields)
+    return False
+
+
 def _owned_listing_or_error(listing_id):
     """Return (listing, None) if the logged-in user owns it, else (None, response)."""
     listing = db.session.get(Listing, listing_id)
@@ -266,6 +318,20 @@ def _owned_listing_or_error(listing_id):
 @bp.route("", methods=["POST"])
 @jwt_required()
 def create_listing():
+    # Posting needs a confirmed email address: it is where we send the review result,
+    # and it stops accounts made with made-up addresses from filling the site.
+    seller = db.session.get(User, _current_user_id())
+    if not seller.email_verified:
+        return (
+            jsonify(
+                {
+                    "error": "Confirm your email address to post listings. We sent you a link.",
+                    "code": "email_not_verified",
+                }
+            ),
+            403,
+        )
+
     clean, error = _clean_fields(_request_data(), require_all=True)
     if error:
         return jsonify({"error": error}), 400
@@ -293,8 +359,12 @@ def update_listing(listing_id):
     if error:
         return jsonify({"error": error}), 400
 
+    # Work out what really changed, to decide whether a moderator must look again.
+    changed = [f for f in clean if not _same(getattr(listing, f), clean[f])]
     for field, value in clean.items():
         setattr(listing, field, value)
+    if _needs_review_again(listing, changed):
+        _send_to_review(listing)
     db.session.commit()
     return jsonify(_listing_to_dict(listing)), 200
 
@@ -345,6 +415,8 @@ def add_photos(listing_id):
         return jsonify({"error": "No photos uploaded"}), 400
 
     _save_photos(listing, photos)
+    if _needs_review_again(listing, [], photos_added=True):
+        _send_to_review(listing)
     db.session.commit()
     return jsonify(_listing_to_dict(listing)), 201
 
@@ -362,8 +434,11 @@ def delete_photo(listing_id, photo_id):
 
     _delete_photo_file(photo)
     db.session.delete(photo)
+    # Removing a photo only matters to a rejected listing (any change resubmits it).
+    if _needs_review_again(listing, ["photo"]):
+        _send_to_review(listing)
     db.session.commit()
-    return jsonify({"message": "Photo deleted"}), 200
+    return jsonify({"message": "Photo deleted", "review_status": listing.review_status}), 200
 
 
 @bp.route("/photos/<filename>", methods=["GET"])

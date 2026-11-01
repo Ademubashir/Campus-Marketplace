@@ -21,6 +21,8 @@ from extensions import (
     limiter,
 )
 from models import Admin, AdminAction, Category, Listing, ListingPhoto, User, db
+from notifications import notify_listing_approved, notify_listing_rejected
+from permissions import ROLES, ROLE_LABELS, can, permissions_for
 from routes.listings import _delete_photo_file
 from utils import issue_admin_token
 
@@ -62,9 +64,13 @@ def _admin_key():
     return f"admin:{identity}" if identity else get_remote_address()
 
 
-def admin_required(allow_pending=False):
+def admin_required(permission=None, allow_pending=False):
     """Only a signed-in, active admin may use the route. A new admin who has not
-    chosen their own password yet may only change it (allow_pending=True)."""
+    chosen their own password yet may only change it (allow_pending=True).
+
+    permission: a name from permissions.py. When given, the admin's role must have
+    it. The check happens here, on the server, so hiding a link in the web page is
+    never the only protection."""
 
     def decorator(fn):
         @wraps(fn)
@@ -79,6 +85,16 @@ def admin_required(allow_pending=False):
                         {
                             "error": "Choose a new password first",
                             "code": "password_change_required",
+                        }
+                    ),
+                    403,
+                )
+            if permission and not can(admin.role, permission):
+                return (
+                    jsonify(
+                        {
+                            "error": "You do not have permission to do that",
+                            "code": "forbidden",
                         }
                     ),
                     403,
@@ -112,6 +128,9 @@ def _admin_dict(a):
         "name": a.name,
         "email": a.email,
         "is_active": a.is_active,
+        "role": a.role,
+        "role_label": ROLE_LABELS.get(a.role, a.role),
+        "permissions": sorted(permissions_for(a.role)),
         "must_change_password": a.must_change_password,
         "created_at": a.created_at,
         "last_login_at": a.last_login_at,
@@ -225,8 +244,11 @@ def admin_stats():
                 },
                 "listings": {
                     "total": Listing.query.count(),
-                    "available": Listing.query.filter_by(status="available").count(),
+                    "available": Listing.query.filter_by(
+                        status="available", review_status="approved"
+                    ).count(),
                     "sold": Listing.query.filter_by(status="sold").count(),
+                    "pending": Listing.query.filter_by(review_status="pending").count(),
                     "new_this_week": Listing.query.filter(
                         Listing.created_at >= week
                     ).count(),
@@ -240,7 +262,7 @@ def admin_stats():
 
 # ---------- students: list, suspend, reinstate ----------
 @bp.route("/users", methods=["GET"])
-@admin_required()
+@admin_required("users.view")
 def admin_users():
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "all")
@@ -272,7 +294,7 @@ def admin_users():
 
 
 @bp.route("/users/<int:user_id>/suspend", methods=["PATCH"])
-@admin_required()
+@admin_required("users.suspend")
 def admin_suspend_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
@@ -296,7 +318,7 @@ def admin_suspend_user(user_id):
 
 
 @bp.route("/users/<int:user_id>/reinstate", methods=["PATCH"])
-@admin_required()
+@admin_required("users.suspend")
 def admin_reinstate_user(user_id):
     user = db.session.get(User, user_id)
     if user is None:
@@ -315,64 +337,91 @@ def admin_reinstate_user(user_id):
 
 # ---------- admin accounts ----------
 @bp.route("/admins", methods=["GET"])
-@admin_required()
+@admin_required("admins.manage")
 def admin_list_admins():
     admins = Admin.query.order_by(Admin.created_at, Admin.id).all()
     return jsonify({"items": [_admin_dict(a) for a in admins]}), 200
 
 
 @bp.route("/admins", methods=["POST"])
-@admin_required()
+@admin_required("admins.manage")
 def admin_create_admin():
     data = _data()
     name = str(data.get("name") or "").strip()
     email = str(data.get("email") or "").strip().lower()
     password = str(data.get("password") or "")
+    role = str(data.get("role") or "").strip()
 
     if not name or "@" not in email or "." not in email.split("@")[-1]:
         return jsonify({"error": "A name and a valid email are required"}), 400
     if len(password) < 8:
         return jsonify({"error": "Password must be at least 8 characters"}), 400
+    if role not in ROLES:
+        return jsonify({"error": "Choose a role for this admin"}), 400
     if Admin.query.filter(db.func.lower(Admin.email) == email).first():
         return jsonify({"error": "An admin with that email already exists"}), 409
 
-    admin = Admin(name=name, email=email, must_change_password=True)
+    admin = Admin(name=name, email=email, role=role, must_change_password=True)
     admin.set_password(password)
     db.session.add(admin)
     db.session.flush()
-    _log("create_admin", "admin", admin.id, f"{admin.name} <{admin.email}>")
+    _log(
+        "create_admin",
+        "admin",
+        admin.id,
+        f"{admin.name} <{admin.email}> as {ROLE_LABELS[role]}",
+    )
     db.session.commit()
     return jsonify({"admin": _admin_dict(admin)}), 201
 
 
 @bp.route("/admins/<int:admin_id>", methods=["PATCH"])
-@admin_required()
+@admin_required("admins.manage")
 def admin_update_admin(admin_id):
     target = db.session.get(Admin, admin_id)
     if target is None:
         return jsonify({"error": "Admin not found"}), 404
+    # Only a super admin gets here, so the person making the change is always an
+    # active super admin: at least one always remains.
     if target.id == g.admin.id:
         return jsonify({"error": "You can't change your own account here"}), 400
-    active = _data().get("is_active")
+
+    data = _data()
+    if "is_active" not in data and "role" not in data:
+        return jsonify({"error": "Nothing to change"}), 400
+    active = data.get("is_active", target.is_active)
     if not isinstance(active, bool):
         return jsonify({"error": "'is_active' must be true or false"}), 400
+    role = data.get("role", target.role)
+    if role not in ROLES:
+        return jsonify({"error": "Choose a valid role"}), 400
 
-    target.is_active = active
-    if not active:
-        target.token_version += 1  # ends their logins straight away
-    _log(
-        "activate_admin" if active else "deactivate_admin",
-        "admin",
-        target.id,
-        f"{target.name} <{target.email}>",
-    )
+    label = f"{target.name} <{target.email}>"
+
+    if role != target.role:
+        before = ROLE_LABELS.get(target.role, target.role)
+        target.role = role
+        target.token_version += 1  # their next sign-in picks up the new role
+        _log(
+            "change_admin_role",
+            "admin",
+            target.id,
+            f"{label}: {before} -> {ROLE_LABELS[role]}",
+        )
+
+    if active != target.is_active:
+        target.is_active = active
+        if not active:
+            target.token_version += 1  # ends their logins straight away
+        _log("activate_admin" if active else "deactivate_admin", "admin", target.id, label)
+
     db.session.commit()
     return jsonify({"admin": _admin_dict(target)}), 200
 
 
 # ---------- listings ----------
 @bp.route("/listings", methods=["GET"])
-@admin_required()
+@admin_required("listings.view")
 def admin_listings():
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "all")
@@ -385,6 +434,9 @@ def admin_listings():
         query = query.filter(Listing.title.ilike(f"%{_like(q)}%", escape="\\"))
     if status in ("available", "sold"):
         query = query.filter(Listing.status == status)
+    review = request.args.get("review_status")
+    if review in ("pending", "approved", "rejected"):
+        query = query.filter(Listing.review_status == review)
     if category_id:
         query = query.filter(Listing.category_id == category_id)
     if seller_id:
@@ -401,6 +453,7 @@ def admin_listings():
                 "title": listing.title,
                 "price": float(listing.price),
                 "status": listing.status,
+                "review_status": listing.review_status,
                 "category": listing.category.name if listing.category else None,
                 "seller": {
                     "id": listing.seller.id,
@@ -416,7 +469,7 @@ def admin_listings():
 
 
 @bp.route("/listings/<int:listing_id>", methods=["DELETE"])
-@admin_required()
+@admin_required("listings.delete")
 def admin_delete_listing(listing_id):
     listing = db.session.get(Listing, listing_id)
     if listing is None:
@@ -431,6 +484,107 @@ def admin_delete_listing(listing_id):
     db.session.delete(listing)
     db.session.commit()
     return jsonify({"message": "Listing deleted"}), 200
+
+
+# ---------- review: listings waiting to go online ----------
+def _review_dict(listing):
+    # An edited or resubmitted listing has a queue date later than its posting date.
+    resubmitted = bool(
+        listing.submitted_at
+        and listing.created_at
+        and (listing.submitted_at - listing.created_at).total_seconds() > 60
+    )
+    return {
+        "id": listing.id,
+        "title": listing.title,
+        "price": float(listing.price),
+        "category": listing.category.name if listing.category else None,
+        "condition": listing.condition,
+        "description": listing.description,
+        "photos": [p.url for p in listing.photos],
+        "seller": {
+            "id": listing.seller.id,
+            "full_name": listing.seller.full_name,
+            "university": listing.seller.university,
+            "is_suspended": listing.seller.is_suspended,
+        },
+        "submitted_at": listing.submitted_at,
+        "resubmitted": resubmitted,
+    }
+
+
+@bp.route("/listings/review", methods=["GET"])
+@admin_required("listings.review")
+def admin_review_queue():
+    """Pending listings, the one that has waited longest first."""
+    page, limit = _paging()
+    query = Listing.query.filter(Listing.review_status == "pending").order_by(
+        Listing.submitted_at.asc(), Listing.id.asc()
+    )
+    rows, meta = _page_of(query, page, limit)
+    return jsonify({"items": [_review_dict(listing) for listing in rows], **meta}), 200
+
+
+@bp.route("/listings/review/count", methods=["GET"])
+@admin_required("listings.review")
+def admin_review_count():
+    """How many are waiting (for the number beside Review in the sidebar)."""
+    return jsonify({"pending": Listing.query.filter_by(review_status="pending").count()}), 200
+
+
+@bp.route("/listings/<int:listing_id>/approve", methods=["PATCH"])
+@admin_required("listings.review")
+def admin_approve_listing(listing_id):
+    listing = db.session.get(Listing, listing_id)
+    if listing is None:
+        return jsonify({"error": "Listing not found"}), 404
+    if listing.review_status != "pending":
+        # Another reviewer may have got there first.
+        return jsonify({"error": "This listing has already been reviewed"}), 409
+
+    listing.review_status = "approved"
+    listing.rejection_reason = None
+    listing.reviewed_by = g.admin.id
+    listing.reviewed_at = db.func.now()
+    _log(
+        "approve_listing",
+        "listing",
+        listing.id,
+        f"{listing.title} (seller: {listing.seller.full_name})",
+    )
+    db.session.commit()
+    notify_listing_approved(listing)  # after the decision is saved
+    return jsonify({"message": "Listing approved"}), 200
+
+
+@bp.route("/listings/<int:listing_id>/reject", methods=["PATCH"])
+@admin_required("listings.review")
+def admin_reject_listing(listing_id):
+    listing = db.session.get(Listing, listing_id)
+    if listing is None:
+        return jsonify({"error": "Listing not found"}), 404
+    reason = str(_data().get("reason") or "").strip()
+    if not reason:
+        return jsonify({"error": "A reason is required"}), 400
+    if len(reason) > 500:
+        return jsonify({"error": "The reason must be 500 characters or fewer"}), 400
+    if listing.review_status != "pending":
+        return jsonify({"error": "This listing has already been reviewed"}), 409
+
+    listing.review_status = "rejected"
+    listing.rejection_reason = reason  # the seller sees this, so keep it polite
+    listing.reviewed_by = g.admin.id
+    listing.reviewed_at = db.func.now()
+    _log(
+        "reject_listing",
+        "listing",
+        listing.id,
+        f"{listing.title} (seller: {listing.seller.full_name})",
+        reason,
+    )
+    db.session.commit()
+    notify_listing_rejected(listing, reason)  # after the decision is saved
+    return jsonify({"message": "Listing rejected"}), 200
 
 
 # ---------- categories ----------
@@ -449,7 +603,7 @@ def _category_dict(c, count):
 
 
 @bp.route("/categories", methods=["GET"])
-@admin_required()
+@admin_required("categories.view")
 def admin_categories():
     other_last = case((Category.slug == "other", 1), else_=0)
     rows = (
@@ -463,7 +617,7 @@ def admin_categories():
 
 
 @bp.route("/categories", methods=["POST"])
-@admin_required()
+@admin_required("categories.manage")
 def admin_create_category():
     name = str(_data().get("name") or "").strip()
     if not 2 <= len(name) <= 50:
@@ -486,7 +640,7 @@ def admin_create_category():
 
 
 @bp.route("/categories/<int:category_id>", methods=["PATCH"])
-@admin_required()
+@admin_required("categories.manage")
 def admin_update_category(category_id):
     category = db.session.get(Category, category_id)
     if category is None:
@@ -526,7 +680,7 @@ def admin_update_category(category_id):
 
 # ---------- log ----------
 @bp.route("/log", methods=["GET"])
-@admin_required()
+@admin_required("log.view")
 def admin_log():
     page, limit = _paging()
     query = AdminAction.query.order_by(AdminAction.created_at.desc(), AdminAction.id.desc())
