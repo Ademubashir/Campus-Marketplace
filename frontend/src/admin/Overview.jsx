@@ -93,7 +93,7 @@ function OverviewSkeleton() {
   )
 }
 
-function StatCard({ label, value, sub }) {
+export function StatCard({ label, value, sub }) {
   return (
     <div className="stat-card">
       <span className="stat-label">{label}</span>

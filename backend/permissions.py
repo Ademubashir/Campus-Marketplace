@@ -26,6 +26,7 @@ ALL_PERMISSIONS = (
     "categories.view",
     "categories.manage",
     "admins.manage",  # create admins, change roles, switch admins on or off
+    "insights.view",  # the Insights charts
     "log.view",
 )
 

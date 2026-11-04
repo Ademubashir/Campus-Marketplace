@@ -29,6 +29,7 @@ import Categories from './admin/Categories'
 import Admins from './admin/Admins'
 import Log from './admin/Log'
 import Password from './admin/Password'
+import Insights from './admin/Insights'
 
 // Shorthand: wraps a page so only logged-in users can see it.
 function Private({ children }) {
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="users" element={<RequirePermission permission="users.view"><Users /></RequirePermission>} />
           <Route path="listings" element={<RequirePermission permission="listings.view"><Listings /></RequirePermission>} />
           <Route path="categories" element={<RequirePermission permission="categories.manage"><Categories /></RequirePermission>} />
+          <Route path="insights" element={<RequirePermission permission="insights.view"><Insights /></RequirePermission>} />
           <Route path="admins" element={<RequirePermission permission="admins.manage"><Admins /></RequirePermission>} />
           <Route path="log" element={<RequirePermission permission="log.view"><Log /></RequirePermission>} />
           <Route path="password" element={<Password />} />

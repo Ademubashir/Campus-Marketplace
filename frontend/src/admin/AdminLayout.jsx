@@ -29,6 +29,7 @@ const NAV_LINKS = [
   { to: '/admin/users', label: 'Users', permission: 'users.view' },
   { to: '/admin/listings', label: 'Listings', permission: 'listings.view' },
   { to: '/admin/categories', label: 'Categories', permission: 'categories.manage' },
+  { to: '/admin/insights', label: 'Insights', permission: 'insights.view' },
   { to: '/admin/admins', label: 'Admins', permission: 'admins.manage' },
   { to: '/admin/log', label: 'Log', permission: 'log.view' },
   { to: '/admin/password', label: 'Change password' },

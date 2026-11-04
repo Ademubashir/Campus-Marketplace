@@ -5,7 +5,8 @@ role="admin" and works only on these routes; a student's token never works here
 (app.py keeps the two sides apart).
 """
 import re
-from datetime import timedelta
+import statistics
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from flask import Blueprint, g, jsonify, request
@@ -585,6 +586,111 @@ def admin_reject_listing(listing_id):
     db.session.commit()
     notify_listing_rejected(listing, reason)  # after the decision is saved
     return jsonify({"message": "Listing rejected"}), 200
+
+
+# ---------- insights: how the site is being used ----------
+def _week_start(moment):
+    """The Monday of the week that a date or a time falls in."""
+    day = moment.date() if isinstance(moment, datetime) else moment
+    return day - timedelta(days=day.weekday())
+
+
+@bp.route("/insights", methods=["GET"])
+@admin_required("insights.view")
+def admin_insights():
+    """Numbers for the Insights charts: new students, new listings and review decisions
+    per week, how long reviews take, and listings by category. Only the counts we
+    already keep; nothing about individual students."""
+    weeks = max(4, min(request.args.get("weeks", 12, type=int) or 12, 52))
+    today = datetime.now(timezone.utc).date()
+    first_week = _week_start(today) - timedelta(weeks=weeks - 1)
+    since = datetime.combine(first_week, datetime.min.time())
+
+    # One bucket per week, oldest first, so weeks with nothing still show as zero.
+    buckets = {}
+    for i in range(weeks):
+        start = first_week + timedelta(weeks=i)
+        buckets[start] = {
+            "start": start.isoformat(),
+            "signups": 0,
+            "listings": 0,
+            "approved": 0,
+            "rejected": 0,
+        }
+
+    def add(moment, key):
+        bucket = buckets.get(_week_start(moment)) if moment is not None else None
+        if bucket is not None:
+            bucket[key] += 1
+
+    for (created,) in db.session.query(User.created_at).filter(User.created_at >= since):
+        add(created, "signups")
+    for (created,) in db.session.query(Listing.created_at).filter(Listing.created_at >= since):
+        add(created, "listings")
+    decisions = db.session.query(AdminAction.action, AdminAction.created_at).filter(
+        AdminAction.created_at >= since,
+        AdminAction.action.in_(("approve_listing", "reject_listing")),
+    )
+    for action, created in decisions:
+        add(created, "approved" if action == "approve_listing" else "rejected")
+
+    approved = sum(b["approved"] for b in buckets.values())
+    rejected = sum(b["rejected"] for b in buckets.values())
+    decided = approved + rejected
+
+    # How long a listing waited between being submitted and being decided.
+    waits = [
+        (reviewed - submitted).total_seconds() / 3600
+        for submitted, reviewed in db.session.query(Listing.submitted_at, Listing.reviewed_at).filter(
+            Listing.reviewed_at.isnot(None), Listing.reviewed_at >= since
+        )
+        if submitted is not None
+    ]
+
+    # How long the one that has waited longest has been waiting (None if nothing waits).
+    oldest = db.session.scalar(
+        db.select(db.func.now() - db.func.min(Listing.submitted_at)).where(
+            Listing.review_status == "pending"
+        )
+    )
+    oldest_hours = oldest.total_seconds() / 3600 if hasattr(oldest, "total_seconds") else None
+
+    category_rows = (
+        db.session.query(
+            Category.name,
+            db.func.count(Listing.id),
+            db.func.coalesce(db.func.sum(case((Listing.status == "sold", 1), else_=0)), 0),
+        )
+        .outerjoin(Listing, Listing.category_id == Category.id)
+        .group_by(Category.id, Category.name)
+        .order_by(db.func.count(Listing.id).desc(), Category.name)
+        .all()
+    )
+
+    return (
+        jsonify(
+            {
+                "weeks": list(buckets.values()),
+                "kpis": {
+                    "students": User.query.count(),
+                    "listings": Listing.query.count(),
+                    "sold": Listing.query.filter_by(status="sold").count(),
+                    "pending": Listing.query.filter_by(review_status="pending").count(),
+                    "approved": approved,
+                    "rejected": rejected,
+                    "approval_rate": (approved / decided) if decided else None,
+                    "avg_wait_hours": (sum(waits) / len(waits)) if waits else None,
+                    "median_wait_hours": statistics.median(waits) if waits else None,
+                    "oldest_pending_hours": oldest_hours,
+                },
+                "categories": [
+                    {"name": name, "total": int(total), "sold": int(sold)}
+                    for name, total, sold in category_rows
+                ],
+            }
+        ),
+        200,
+    )
 
 
 # ---------- categories ----------
